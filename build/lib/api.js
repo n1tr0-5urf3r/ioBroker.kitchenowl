@@ -54,6 +54,7 @@ class KitchenOwlClient {
   retries;
   retryDelay;
   log;
+  photoBase;
   dispatcher;
   abortController = new AbortController();
   destroyed = false;
@@ -68,6 +69,7 @@ class KitchenOwlClient {
     this.retries = (_b = options.retries) != null ? _b : 2;
     this.retryDelay = (_c = options.retryDelay) != null ? _c : 2e3;
     this.log = options.log;
+    this.photoBase = options.photoBase;
     if (options.rejectUnauthorized === false) {
       this.dispatcher = new import_undici.Agent({ connect: { rejectUnauthorized: false } });
     }
@@ -85,7 +87,33 @@ class KitchenOwlClient {
    * @param filename - Photo filename as returned by the API, if any
    */
   photoUrl(filename) {
+    if (this.photoBase) {
+      return `${this.photoBase}${encodeURIComponent(filename)}`;
+    }
     return `${this.baseUrl}/api/upload/${encodeURIComponent(filename)}`;
+  }
+  /**
+   * Downloads one photo.
+   *
+   * @param filename - Photo filename as the API reports it
+   */
+  async fetchPhoto(filename) {
+    if (this.destroyed) {
+      throw new Error("Client has been destroyed");
+    }
+    const response = await (0, import_undici.fetch)(`${this.baseUrl}/api/upload/${encodeURIComponent(filename)}`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+      signal: AbortSignal.any([AbortSignal.timeout(this.timeout), this.abortController.signal]),
+      ...this.dispatcher ? { dispatcher: this.dispatcher } : {}
+    });
+    if (!response.ok) {
+      throw new KitchenOwlApiError(
+        `Downloading ${filename} returned ${response.status} ${response.statusText}`,
+        response.status,
+        `/api/upload/${filename}`
+      );
+    }
+    return Buffer.from(await response.arrayBuffer());
   }
   // --- reads -------------------------------------------------------------
   /** Server version and feature flags. This endpoint needs no authentication. */

@@ -26,6 +26,7 @@ var import_api = require("./lib/api");
 var import_commands = require("./lib/commands");
 var import_instance = require("./lib/instance");
 var import_objects = require("./lib/objects");
+var import_photos = require("./lib/photos");
 var import_sync = require("./lib/sync");
 class Kitchenowl extends utils.Adapter {
   client;
@@ -45,6 +46,9 @@ class Kitchenowl extends utils.Adapter {
   plannerCache = /* @__PURE__ */ new Map();
   /** Counts polls, so the slow branches can sit most of them out. */
   pollCount = 0;
+  photos;
+  /** Photos seen this poll, so unreferenced copies can be cleaned up. */
+  photosSeen = /* @__PURE__ */ new Set();
   constructor(options = {}) {
     super({
       ...options,
@@ -71,6 +75,8 @@ class Kitchenowl extends utils.Adapter {
     this.client = new import_api.KitchenOwlClient({
       url,
       token,
+      // With caching on, photo URLs point at our own copy, which needs no token.
+      photoBase: this.config.cachePhotos ? import_photos.PhotoCache.urlBase(this.namespace) : void 0,
       timeout: this.config.requestTimeout,
       retries: this.config.retries,
       retryDelay: this.config.retryDelay,
@@ -110,6 +116,7 @@ class Kitchenowl extends utils.Adapter {
       this.pollCount++;
       const writer = new import_objects.ObjectWriter(this, this.objectCache);
       writer.channel("households", "Households", "folder");
+      this.photosSeen = /* @__PURE__ */ new Set();
       let failed = 0;
       let lastHouseholdError = "";
       for (const household of households) {
@@ -128,6 +135,12 @@ class Kitchenowl extends utils.Adapter {
         throw new Error(lastHouseholdError);
       }
       await writer.flush();
+      if (this.photos) {
+        await this.photos.store(this.photosSeen);
+        if (withSlow && failed === 0) {
+          await this.photos.prune(this.photosSeen);
+        }
+      }
       if (this.config.deleteStaleObjects) {
         if (failed > 0) {
           this.log.debug("Skipping the cleanup of stale objects: a household could not be read");
@@ -170,10 +183,14 @@ class Kitchenowl extends utils.Adapter {
    * @param withSlow
    */
   async syncOneHousehold(writer, household, withSlow) {
-    var _a;
+    var _a, _b;
     const client = this.client;
     const base = (0, import_sync.householdBase)(household);
     const config = this.syncConfig();
+    this.rememberPhoto(household.photo);
+    for (const member of (_a = household.member) != null ? _a : []) {
+      this.rememberPhoto(member.photo);
+    }
     (0, import_sync.syncHousehold)(writer, client, base, household);
     if (config.syncMembers) {
       (0, import_sync.syncMembers)(writer, client, base, household);
@@ -183,7 +200,11 @@ class Kitchenowl extends utils.Adapter {
     }
     if (config.syncRecipes) {
       if (withSlow) {
-        (0, import_sync.syncRecipes)(writer, client, base, await client.recipes(household.id), config);
+        const recipes = await client.recipes(household.id);
+        for (const recipe of recipes) {
+          this.rememberPhoto(recipe.photo);
+        }
+        (0, import_sync.syncRecipes)(writer, client, base, recipes, config);
       } else {
         writer.keepTree(`${base}.recipes`);
       }
@@ -194,7 +215,7 @@ class Kitchenowl extends utils.Adapter {
       (0, import_sync.syncPlanner)(writer, base, entries, config);
     }
     if (config.syncExpenses && household.expenses_feature) {
-      const memberNames = new Map(((_a = household.member) != null ? _a : []).map((member) => [member.id, member.name]));
+      const memberNames = new Map(((_b = household.member) != null ? _b : []).map((member) => [member.id, member.name]));
       const [expenses, categories, overview] = await Promise.all([
         client.expenses(household.id, config.expenseView, config.expensePages),
         client.expenseCategories(household.id),
@@ -205,6 +226,9 @@ class Kitchenowl extends utils.Adapter {
           config.expenseView
         )
       ]);
+      for (const expense of expenses) {
+        this.rememberPhoto(expense.photo);
+      }
       (0, import_sync.syncExpenses)(writer, base, expenses, categories, overview, config, memberNames);
     }
     if (config.syncCatalog) {
@@ -218,6 +242,16 @@ class Kitchenowl extends utils.Adapter {
       } else {
         writer.keepTree(`${base}.catalog`);
       }
+    }
+  }
+  /**
+   * Notes a photo this poll referred to, so it can be fetched and kept.
+   *
+   * @param filename - Photo filename from the API, if the object has one
+   */
+  rememberPhoto(filename) {
+    if (this.photos && filename) {
+      this.photosSeen.add(filename);
     }
   }
   /** The households to synchronise, filtered by the instance configuration. */

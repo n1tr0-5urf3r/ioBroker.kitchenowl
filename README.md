@@ -91,6 +91,7 @@ member of. It does not expire until you revoke it in KitchenOwl.
 | Create a state tree per recipe | on | Off leaves only the `recipes.json` state |
 | Create a state tree per shopping list item | on | Off leaves only the per-list `json` state |
 | Delete objects that disappeared in KitchenOwl | on | Prunes states for removed lists, recipes and members |
+| Download photos so a visualization can show them | on | Keeps a copy of each photo with the adapter; roughly 185 kB per photo, fetched once |
 
 ### Expenses
 
@@ -149,9 +150,13 @@ kitchenowl.<instance>
         └── itemsJson, itemCount, categoriesJson, categoryCount, tagsJson, tagCount
 ```
 
-**About `photoUrl`:** the address is real, but the endpoint needs the API token, and a browser does not send it
-with an `<img>` tag. Loading one straight from a visualization answers `Request unauthorized`. Fetch it server side,
-in a script that can set the `Authorization` header, or cache a copy somewhere your visualization can read.
+**About `photoUrl`:** KitchenOwl serves photos only to a request carrying the API token, which a browser never sends
+for an `<img>` tag, so the address on the server answers `Request unauthorized`. The adapter therefore downloads each
+photo once into its own file storage and points `photoUrl` at that copy, something like
+`/kitchenowl.0/photos/<name>.jpg`, which ioBroker serves without a token and any visualization can load. Photos are
+named after a UUID upstream, so a picture is fetched once and only downloaded again when it actually changes; copies
+nothing refers to any more are removed. Turning **Download photos** off instead publishes the address on the
+KitchenOwl server, which then needs the token.
 
 **About `icon`:** KitchenOwl's API hands out an icon *key* such as `honey`, and the artwork behind it is compiled
 into the KitchenOwl apps: no address serves it, and its licence forbids shipping a copy. The adapter therefore
@@ -221,6 +226,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 -->
 ### **WORK IN PROGRESS**
 
+- (n1tr0-5urf3r) Photos are downloaded into the adapter's own file storage and `photoUrl` points at that copy, so a visualisation can show them. The address on the KitchenOwl server needs the API token, which a browser does not send, so loading one directly answered `Request unauthorized`
 - (n1tr0-5urf3r) Items report an emoji instead of KitchenOwl's icon key. The key named artwork that no address serves and whose licence forbids shipping a copy, so a visualisation showed a broken image and the word `honey`. All 403 upstream keys are covered, and an item without one falls back to the emoji on its category
 - (n1tr0-5urf3r) Recipes and the item catalog are read every tenth poll rather than every one. They are 93 % of the traffic a poll makes and change rarely, so a five minute interval now moves around 30 kB instead of 505 kB. The interval is configurable, and 1 restores the old behaviour
 - (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them. Each day now carries `count`, `recipeNames`, `date` and `json`; the singular `recipeId`, `recipeName` and `yields` are gone, because they described only the first meal and were quietly wrong on a day with two. The per-day button is now `removeAll` and clears every meal on that day, since one button cannot say which of several to drop

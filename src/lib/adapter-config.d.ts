@@ -34,6 +34,8 @@ declare global {
 			createRecipeObjects: boolean;
 			createShoppingItemObjects: boolean;
 			deleteStaleObjects: boolean;
+			/** Download photos into the adapter's own file storage so a visualisation can load them. */
+			cachePhotos: boolean;
 
 			expenseOverviewFrame: ExpenseFrame;
 			expenseOverviewSteps: number;

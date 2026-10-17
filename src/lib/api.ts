@@ -59,6 +59,14 @@ export interface KitchenOwlClientOptions {
 	rejectUnauthorized?: boolean;
 	/** Optional sink for debug messages, usually `adapter.log.debug`. */
 	log?: (message: string) => void;
+	/**
+	 * Where photos are published, when the adapter caches them locally.
+	 *
+	 * Photo URLs are presentation rather than API surface: the upload endpoint
+	 * needs the token, which a browser never sends, so a cached copy is what a
+	 * visualisation can actually load.
+	 */
+	photoBase?: string;
 }
 
 /** An HTTP error carrying the status code, so callers can treat 401 and 404 differently. */
@@ -97,6 +105,7 @@ export class KitchenOwlClient {
 	private readonly retries: number;
 	private readonly retryDelay: number;
 	private readonly log?: (message: string) => void;
+	private readonly photoBase?: string;
 	private readonly dispatcher?: Agent;
 	private readonly abortController = new AbortController();
 	private destroyed = false;
@@ -116,6 +125,7 @@ export class KitchenOwlClient {
 		this.retries = options.retries ?? 2;
 		this.retryDelay = options.retryDelay ?? 2000;
 		this.log = options.log;
+		this.photoBase = options.photoBase;
 
 		if (options.rejectUnauthorized === false) {
 			this.dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
@@ -135,7 +145,36 @@ export class KitchenOwlClient {
 	 * @param filename - Photo filename as returned by the API, if any
 	 */
 	public photoUrl(filename: string): string {
+		if (this.photoBase) {
+			return `${this.photoBase}${encodeURIComponent(filename)}`;
+		}
 		return `${this.baseUrl}/api/upload/${encodeURIComponent(filename)}`;
+	}
+
+	/**
+	 * Downloads one photo.
+	 *
+	 * @param filename - Photo filename as the API reports it
+	 */
+	public async fetchPhoto(filename: string): Promise<Buffer> {
+		if (this.destroyed) {
+			throw new Error('Client has been destroyed');
+		}
+
+		const response = await fetch(`${this.baseUrl}/api/upload/${encodeURIComponent(filename)}`, {
+			headers: { Authorization: `Bearer ${this.token}` },
+			signal: AbortSignal.any([AbortSignal.timeout(this.timeout), this.abortController.signal]),
+			...(this.dispatcher ? { dispatcher: this.dispatcher } : {}),
+		});
+
+		if (!response.ok) {
+			throw new KitchenOwlApiError(
+				`Downloading ${filename} returned ${response.status} ${response.statusText}`,
+				response.status,
+				`/api/upload/${filename}`,
+			);
+		}
+		return Buffer.from(await response.arrayBuffer());
 	}
 
 	// --- reads -------------------------------------------------------------

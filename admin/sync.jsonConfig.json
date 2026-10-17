@@ -156,6 +156,17 @@
 			"md": 4,
 			"lg": 4,
 			"xl": 4
+		},
+		"cachePhotos": {
+			"type": "checkbox",
+			"label": "Download photos so a visualization can show them",
+			"help": "KitchenOwl serves photos only with the API token, which a browser does not send. A copy is kept with the adapter and downloaded once per photo.",
+			"newLine": true,
+			"xs": 12,
+			"sm": 6,
+			"md": 6,
+			"lg": 4,
+			"xl": 4
 		}
 	}
 }

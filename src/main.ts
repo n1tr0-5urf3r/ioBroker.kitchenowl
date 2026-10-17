@@ -8,6 +8,7 @@ import { KitchenOwlApiError, KitchenOwlClient } from './lib/api';
 import { parseCommand, runCommand } from './lib/commands';
 import { connectionOptions, selectHouseholds } from './lib/instance';
 import { type ObjectCache, ObjectWriter } from './lib/objects';
+import { PhotoCache } from './lib/photos';
 import {
 	householdBase,
 	type SyncConfig,
@@ -39,6 +40,9 @@ class Kitchenowl extends utils.Adapter {
 	private readonly plannerCache = new Map<number, PlannerEntry[]>();
 	/** Counts polls, so the slow branches can sit most of them out. */
 	private pollCount = 0;
+	private photos?: PhotoCache;
+	/** Photos seen this poll, so unreferenced copies can be cleaned up. */
+	private photosSeen = new Set<string>();
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -70,6 +74,8 @@ class Kitchenowl extends utils.Adapter {
 		this.client = new KitchenOwlClient({
 			url,
 			token,
+			// With caching on, photo URLs point at our own copy, which needs no token.
+			photoBase: this.config.cachePhotos ? PhotoCache.urlBase(this.namespace) : undefined,
 			timeout: this.config.requestTimeout,
 			retries: this.config.retries,
 			retryDelay: this.config.retryDelay,
@@ -122,6 +128,7 @@ class Kitchenowl extends utils.Adapter {
 			const writer = new ObjectWriter(this, this.objectCache);
 			writer.channel('households', 'Households', 'folder');
 
+			this.photosSeen = new Set<string>();
 			let failed = 0;
 			let lastHouseholdError = '';
 
@@ -147,6 +154,14 @@ class Kitchenowl extends utils.Adapter {
 			}
 
 			await writer.flush();
+
+			if (this.photos) {
+				await this.photos.store(this.photosSeen);
+				// Only a poll that read every branch knows the full set.
+				if (withSlow && failed === 0) {
+					await this.photos.prune(this.photosSeen);
+				}
+			}
 
 			if (this.config.deleteStaleObjects) {
 				if (failed > 0) {
@@ -201,6 +216,11 @@ class Kitchenowl extends utils.Adapter {
 		const base = householdBase(household);
 		const config = this.syncConfig();
 
+		this.rememberPhoto(household.photo);
+		for (const member of household.member ?? []) {
+			this.rememberPhoto(member.photo);
+		}
+
 		syncHousehold(writer, client, base, household);
 
 		if (config.syncMembers) {
@@ -213,7 +233,11 @@ class Kitchenowl extends utils.Adapter {
 
 		if (config.syncRecipes) {
 			if (withSlow) {
-				syncRecipes(writer, client, base, await client.recipes(household.id), config);
+				const recipes = await client.recipes(household.id);
+				for (const recipe of recipes) {
+					this.rememberPhoto(recipe.photo);
+				}
+				syncRecipes(writer, client, base, recipes, config);
 			} else {
 				// Not read this poll, so the cleanup must not mistake it for gone.
 				writer.keepTree(`${base}.recipes`);
@@ -240,6 +264,9 @@ class Kitchenowl extends utils.Adapter {
 					config.expenseView,
 				),
 			]);
+			for (const expense of expenses) {
+				this.rememberPhoto(expense.photo);
+			}
 			syncExpenses(writer, base, expenses, categories, overview, config, memberNames);
 		}
 
@@ -254,6 +281,17 @@ class Kitchenowl extends utils.Adapter {
 			} else {
 				writer.keepTree(`${base}.catalog`);
 			}
+		}
+	}
+
+	/**
+	 * Notes a photo this poll referred to, so it can be fetched and kept.
+	 *
+	 * @param filename - Photo filename from the API, if the object has one
+	 */
+	private rememberPhoto(filename: string | null | undefined): void {
+		if (this.photos && filename) {
+			this.photosSeen.add(filename);
 		}
 	}
 
