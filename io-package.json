@@ -134,6 +134,7 @@
     "retryDelay": 2000,
     "householdIds": [],
     "pollInterval": 300,
+    "slowPollFactor": 10,
     "syncMembers": true,
     "syncShoppingLists": true,
     "syncRecipes": true,

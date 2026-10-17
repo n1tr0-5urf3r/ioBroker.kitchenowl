@@ -36,6 +36,7 @@
 	"Perspective": "Perspective",
 	"Please enter a URL starting with http:// or https://": "Veuillez saisir une URL commençant par http:// ou https://",
 	"Poll interval": "Intervalle d'interrogation",
+	"Read recipes and the catalog every": "Read recipes and the catalog every",
 	"Recipes": "Recettes",
 	"Refresh delay after a write": "Délai d'actualisation après une écriture",
 	"Request handling": "Traitement des demandes",
@@ -48,6 +49,7 @@
 	"Test connection": "Tester la connexion",
 	"The server returns 30 expenses per page": "Le serveur renvoie 30 dépenses par page",
 	"These settings only apply to households that have the expenses feature enabled in KitchenOwl.": "Ces paramètres s'appliquent uniquement aux ménages pour lesquels la fonction de dépenses est activée dans KitchenOwl.",
+	"These two are by far the largest reads and change rarely. 1 reads them on every poll.": "These two are by far the largest reads and change rarely. 1 reads them on every poll.",
 	"Time frame": "Laps de temps",
 	"Verify TLS certificate": "Vérifier le certificat TLS",
 	"Weekly": "Hebdomadaire",
@@ -57,5 +59,6 @@
 	"Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?": "Les états inscriptibles peuvent ajouter, modifier et supprimer des éléments de liste de courses, des dépenses et des entrées de planificateur dans KitchenOwl. Continuer?",
 	"Write access": "Accès en écriture",
 	"Yearly": "Annuel",
-	"kitchenowl adapter settings": "Paramètres de l'adaptateur pour KitchenOwl"
+	"kitchenowl adapter settings": "Paramètres de l'adaptateur pour KitchenOwl",
+	"polls": "polls"
 }

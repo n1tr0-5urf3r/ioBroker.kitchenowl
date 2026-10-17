@@ -78,6 +78,8 @@ export class ObjectWriter {
 	private readonly states: StateDef[] = [];
 	/** Every id this run touched, used to find objects that disappeared upstream. */
 	private readonly seen = new Set<string>();
+	/** Branches this run did not read, which pruning must therefore leave alone. */
+	private readonly untouched = new Set<string>();
 
 	/**
 	 * @param adapter - Adapter instance the objects belong to
@@ -173,6 +175,19 @@ export class ObjectWriter {
 	 */
 	public button(id: string, name: string): void {
 		this.state({ id, name, type: 'boolean', role: 'button', value: undefined, read: false, write: true });
+	}
+
+	/**
+	 * Declares a branch as not read this run, so pruning skips it entirely.
+	 *
+	 * A poll that deliberately skips the recipes or the catalog has not seen
+	 * their objects, and without this the cleanup would read that as the whole
+	 * branch having disappeared upstream.
+	 *
+	 * @param prefix - Namespace-relative prefix to leave untouched
+	 */
+	public keepTree(prefix: string): void {
+		this.untouched.add(prefix);
 	}
 
 	/**
@@ -289,6 +304,9 @@ export class ObjectWriter {
 				continue;
 			}
 			if (this.seen.has(relativeId)) {
+				continue;
+			}
+			if ([...this.untouched].some(tree => relativeId === tree || relativeId.startsWith(`${tree}.`))) {
 				continue;
 			}
 			stale.push(relativeId);

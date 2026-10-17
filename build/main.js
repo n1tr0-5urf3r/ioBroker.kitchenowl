@@ -43,6 +43,8 @@ class Kitchenowl extends utils.Adapter {
   objectCache = /* @__PURE__ */ new Map();
   /** Last known meal plan per household, so `days.<n>.remove` can find its recipe. */
   plannerCache = /* @__PURE__ */ new Map();
+  /** Counts polls, so the slow branches can sit most of them out. */
+  pollCount = 0;
   constructor(options = {}) {
     super({
       ...options,
@@ -103,13 +105,16 @@ class Kitchenowl extends utils.Adapter {
       if (households.length === 0) {
         this.log.warn("No matching household was found for the configured token.");
       }
+      const factor = Math.max(1, this.config.slowPollFactor || 1);
+      const withSlow = this.pollCount % factor === 0;
+      this.pollCount++;
       const writer = new import_objects.ObjectWriter(this, this.objectCache);
       writer.channel("households", "Households", "folder");
       let failed = 0;
       let lastHouseholdError = "";
       for (const household of households) {
         try {
-          await this.syncOneHousehold(writer, household);
+          await this.syncOneHousehold(writer, household, withSlow);
         } catch (error) {
           if (error instanceof import_api.KitchenOwlApiError && error.isAuthError) {
             throw error;
@@ -162,8 +167,9 @@ class Kitchenowl extends utils.Adapter {
    *
    * @param writer - Collector the states are added to
    * @param household - Household being written
+   * @param withSlow
    */
-  async syncOneHousehold(writer, household) {
+  async syncOneHousehold(writer, household, withSlow) {
     var _a;
     const client = this.client;
     const base = (0, import_sync.householdBase)(household);
@@ -176,7 +182,11 @@ class Kitchenowl extends utils.Adapter {
       (0, import_sync.syncShoppingLists)(writer, base, await client.shoppingLists(household.id), config);
     }
     if (config.syncRecipes) {
-      (0, import_sync.syncRecipes)(writer, client, base, await client.recipes(household.id), config);
+      if (withSlow) {
+        (0, import_sync.syncRecipes)(writer, client, base, await client.recipes(household.id), config);
+      } else {
+        writer.keepTree(`${base}.recipes`);
+      }
     }
     if (config.syncPlanner && household.planner_feature) {
       const entries = await client.planner(household.id);
@@ -198,12 +208,16 @@ class Kitchenowl extends utils.Adapter {
       (0, import_sync.syncExpenses)(writer, base, expenses, categories, overview, config, memberNames);
     }
     if (config.syncCatalog) {
-      const [items, categories, tags] = await Promise.all([
-        client.items(household.id),
-        client.categories(household.id),
-        client.tags(household.id)
-      ]);
-      (0, import_sync.syncCatalog)(writer, base, items, categories, tags);
+      if (withSlow) {
+        const [items, categories, tags] = await Promise.all([
+          client.items(household.id),
+          client.categories(household.id),
+          client.tags(household.id)
+        ]);
+        (0, import_sync.syncCatalog)(writer, base, items, categories, tags);
+      } else {
+        writer.keepTree(`${base}.catalog`);
+      }
     }
   }
   /** The households to synchronise, filtered by the instance configuration. */

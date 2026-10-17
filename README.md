@@ -81,6 +81,7 @@ member of. It does not expire until you revoke it in KitchenOwl.
 | --- | --- | --- |
 | Households to synchronize | all | Empty means every household visible to the token |
 | Poll interval | 300 s | Minimum 30 s |
+| Read recipes and the catalog every | 10 polls | These two are by far the largest reads and change rarely; 1 reads them on every poll |
 | Members and expense balances | on | |
 | Shopping lists | on | |
 | Recipes | on | |
@@ -210,6 +211,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 -->
 ### **WORK IN PROGRESS**
 
+- (n1tr0-5urf3r) Recipes and the item catalog are read every tenth poll rather than every one. They are 93 % of the traffic a poll makes and change rarely, so a five minute interval now moves around 30 kB instead of 505 kB. The interval is configurable, and 1 restores the old behaviour
 - (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them. Each day now carries `count`, `recipeNames`, `date` and `json`; the singular `recipeId`, `recipeName` and `yields` are gone, because they described only the first meal and were quietly wrong on a day with two. The per-day button is now `removeAll` and clears every meal on that day, since one button cannot say which of several to drop
 - (n1tr0-5urf3r) Removing a planned meal and deleting an expense send a request body, without which the server answered with an error. Removing a planned meal also names the date it refers to, so the right one goes when a recipe is on the plan more than once, and pressing remove on an empty day does nothing instead of logging an error
 - (n1tr0-5urf3r) Clearing a shopping list names the items to remove, which is what the endpoint expects; it answered with an error before

@@ -37,6 +37,8 @@ class Kitchenowl extends utils.Adapter {
 	private readonly objectCache: ObjectCache = new Map();
 	/** Last known meal plan per household, so `days.<n>.remove` can find its recipe. */
 	private readonly plannerCache = new Map<number, PlannerEntry[]>();
+	/** Counts polls, so the slow branches can sit most of them out. */
+	private pollCount = 0;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -110,6 +112,13 @@ class Kitchenowl extends utils.Adapter {
 				this.log.warn('No matching household was found for the configured token.');
 			}
 
+			// Recipes and the item catalog are the big, slow, rarely changing
+			// reads, so they sit out most polls. The first poll always takes
+			// them, otherwise a fresh start would show an empty recipe branch.
+			const factor = Math.max(1, this.config.slowPollFactor || 1);
+			const withSlow = this.pollCount % factor === 0;
+			this.pollCount++;
+
 			const writer = new ObjectWriter(this, this.objectCache);
 			writer.channel('households', 'Households', 'folder');
 
@@ -118,7 +127,7 @@ class Kitchenowl extends utils.Adapter {
 
 			for (const household of households) {
 				try {
-					await this.syncOneHousehold(writer, household);
+					await this.syncOneHousehold(writer, household, withSlow);
 				} catch (error) {
 					// A rejected token is fatal for every household, so let it through
 					// instead of softening it into one warning per household.
@@ -185,8 +194,9 @@ class Kitchenowl extends utils.Adapter {
 	 *
 	 * @param writer - Collector the states are added to
 	 * @param household - Household being written
+	 * @param withSlow
 	 */
-	private async syncOneHousehold(writer: ObjectWriter, household: Household): Promise<void> {
+	private async syncOneHousehold(writer: ObjectWriter, household: Household, withSlow: boolean): Promise<void> {
 		const client = this.client!;
 		const base = householdBase(household);
 		const config = this.syncConfig();
@@ -202,7 +212,12 @@ class Kitchenowl extends utils.Adapter {
 		}
 
 		if (config.syncRecipes) {
-			syncRecipes(writer, client, base, await client.recipes(household.id), config);
+			if (withSlow) {
+				syncRecipes(writer, client, base, await client.recipes(household.id), config);
+			} else {
+				// Not read this poll, so the cleanup must not mistake it for gone.
+				writer.keepTree(`${base}.recipes`);
+			}
 		}
 
 		// The planner and expense branches only exist when the household enables them.
@@ -229,12 +244,16 @@ class Kitchenowl extends utils.Adapter {
 		}
 
 		if (config.syncCatalog) {
-			const [items, categories, tags] = await Promise.all([
-				client.items(household.id),
-				client.categories(household.id),
-				client.tags(household.id),
-			]);
-			syncCatalog(writer, base, items, categories, tags);
+			if (withSlow) {
+				const [items, categories, tags] = await Promise.all([
+					client.items(household.id),
+					client.categories(household.id),
+					client.tags(household.id),
+				]);
+				syncCatalog(writer, base, items, categories, tags);
+			} else {
+				writer.keepTree(`${base}.catalog`);
+			}
 		}
 	}
 

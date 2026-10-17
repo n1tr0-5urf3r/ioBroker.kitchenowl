@@ -36,6 +36,7 @@
 	"Perspective": "看法",
 	"Please enter a URL starting with http:// or https://": "请输入以 http:// 或 https:// 开头的 URL",
 	"Poll interval": "轮询间隔",
+	"Read recipes and the catalog every": "Read recipes and the catalog every",
 	"Recipes": "食谱",
 	"Refresh delay after a write": "写入后刷新延迟",
 	"Request handling": "请求处理",
@@ -48,6 +49,7 @@
 	"Test connection": "测试连接",
 	"The server returns 30 expenses per page": "服务器每页返回30笔费用",
 	"These settings only apply to households that have the expenses feature enabled in KitchenOwl.": "这些设置仅适用于在 KitchenOwl 中启用了费用功能的家庭。",
+	"These two are by far the largest reads and change rarely. 1 reads them on every poll.": "These two are by far the largest reads and change rarely. 1 reads them on every poll.",
 	"Time frame": "大体时间",
 	"Verify TLS certificate": "验证 TLS 证书",
 	"Weekly": "每周",
@@ -57,5 +59,6 @@
 	"Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?": "可写状态可以在 KitchenOwl 中添加、更改和删除购物清单项目、费用和计划条目。继续？",
 	"Write access": "写访问",
 	"Yearly": "每年",
-	"kitchenowl adapter settings": "KitchenOwl 的适配器设置"
+	"kitchenowl adapter settings": "KitchenOwl 的适配器设置",
+	"polls": "polls"
 }

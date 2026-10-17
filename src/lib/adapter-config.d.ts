@@ -21,6 +21,8 @@ declare global {
 			/** Household ids to synchronise. Empty means every visible household. */
 			householdIds: string[];
 			pollInterval: number;
+			/** Read recipes and the item catalog only every Nth poll; 1 means every poll. */
+			slowPollFactor: number;
 
 			syncMembers: boolean;
 			syncShoppingLists: boolean;

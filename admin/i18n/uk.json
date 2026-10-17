@@ -36,6 +36,7 @@
 	"Perspective": "Перспектива",
 	"Please enter a URL starting with http:// or https://": "Введіть URL-адресу, яка починається з http:// або https://",
 	"Poll interval": "Інтервал опитування",
+	"Read recipes and the catalog every": "Read recipes and the catalog every",
 	"Recipes": "рецепти",
 	"Refresh delay after a write": "Затримка оновлення після запису",
 	"Request handling": "Обробка запитів",
@@ -48,6 +49,7 @@
 	"Test connection": "Тестове підключення",
 	"The server returns 30 expenses per page": "Сервер повертає 30 витрат на сторінку",
 	"These settings only apply to households that have the expenses feature enabled in KitchenOwl.": "Ці налаштування застосовуються лише до домогосподарств, у яких увімкнено функцію витрат у KitchenOwl.",
+	"These two are by far the largest reads and change rarely. 1 reads them on every poll.": "These two are by far the largest reads and change rarely. 1 reads them on every poll.",
 	"Time frame": "Часові рамки",
 	"Verify TLS certificate": "Перевірте сертифікат TLS",
 	"Weekly": "Щотижня",
@@ -57,5 +59,6 @@
 	"Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?": "Записувані стани можуть додавати, змінювати та видаляти елементи списку покупок, витрати та записи планувальника в KitchenOwl. Продовжити?",
 	"Write access": "Доступ для запису",
 	"Yearly": "щорічно",
-	"kitchenowl adapter settings": "Налаштування адаптера для KitchenOwl"
+	"kitchenowl adapter settings": "Налаштування адаптера для KitchenOwl",
+	"polls": "polls"
 }

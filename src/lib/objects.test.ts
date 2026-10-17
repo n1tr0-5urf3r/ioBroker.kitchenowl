@@ -372,6 +372,40 @@ describe('ObjectWriter', () => {
 			expect(adapter.states.get('households.1.shoppingLists.2.itemCount')).to.equal(2);
 		});
 
+		it('leaves a branch alone that the poll deliberately skipped', async () => {
+			// A tiered poll does not read the recipes every time. Without
+			// keepTree the cleanup would see the whole branch missing from this
+			// run and delete it, then the next slow poll would rebuild it.
+			writer.channel('households.1', 'One');
+			writer.channel('households.1.recipes', 'Recipes');
+			writer.value('households.1.recipes.20.name', 'Name', 'string', 'text', 'Tomato Soup');
+			await writer.flush();
+
+			const skipped = new ObjectWriter(adapter.asAdapter());
+			skipped.channel('households.1', 'One');
+			skipped.keepTree('households.1.recipes');
+			await skipped.flush();
+			const deleted = await skipped.prune(['households']);
+
+			expect(deleted).to.equal(0);
+			expect(adapter.objects.has('households.1.recipes.20.name')).to.equal(true);
+		});
+
+		it('still prunes inside a branch once it is read again', async () => {
+			writer.channel('households.1', 'One');
+			writer.channel('households.1.recipes', 'Recipes');
+			writer.value('households.1.recipes.20.name', 'Name', 'string', 'text', 'Tomato Soup');
+			await writer.flush();
+
+			const read = new ObjectWriter(adapter.asAdapter());
+			read.channel('households.1', 'One');
+			read.channel('households.1.recipes', 'Recipes');
+			await read.flush();
+			await read.prune(['households']);
+
+			expect(adapter.objects.has('households.1.recipes.20.name')).to.equal(false);
+		});
+
 		it('keeps ids that were explicitly marked as still alive', async () => {
 			writer.value('households.1.recipes.scrapeResult', 'Result', 'string', 'json', '{}');
 			await writer.flush();

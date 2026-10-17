@@ -36,6 +36,7 @@
 	"Perspective": "Perspectief",
 	"Please enter a URL starting with http:// or https://": "Voer een URL in die begint met http:// of https://",
 	"Poll interval": "Poll-interval",
+	"Read recipes and the catalog every": "Read recipes and the catalog every",
 	"Recipes": "Recepten",
 	"Refresh delay after a write": "Vernieuwingsvertraging na schrijven",
 	"Request handling": "Verzoek afhandeling",
@@ -48,6 +49,7 @@
 	"Test connection": "Verbinding testen",
 	"The server returns 30 expenses per page": "De server retourneert 30 kosten per pagina",
 	"These settings only apply to households that have the expenses feature enabled in KitchenOwl.": "Deze instellingen zijn alleen van toepassing op huishoudens waarvoor de onkostenfunctie is ingeschakeld in KitchenOwl.",
+	"These two are by far the largest reads and change rarely. 1 reads them on every poll.": "These two are by far the largest reads and change rarely. 1 reads them on every poll.",
 	"Time frame": "Tijdsbestek",
 	"Verify TLS certificate": "Controleer het TLS-certificaat",
 	"Weekly": "Wekelijks",
@@ -57,5 +59,6 @@
 	"Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?": "Beschrijfbare statussen kunnen boodschappenlijstitems, uitgaven en plannergegevens in KitchenOwl toevoegen, wijzigen en verwijderen. Doorgaan?",
 	"Write access": "Schrijftoegang",
 	"Yearly": "Jaarlijks",
-	"kitchenowl adapter settings": "Adapterinstellingen voor KitchenOwl"
+	"kitchenowl adapter settings": "Adapterinstellingen voor KitchenOwl",
+	"polls": "polls"
 }

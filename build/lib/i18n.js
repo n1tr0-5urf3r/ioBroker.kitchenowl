@@ -93,8 +93,6 @@ const GERMAN = {
   "Recalculate member balances": "Mitgliedersalden neu berechnen",
   "Recent expenses": "Aktuelle Ausgaben",
   "Recently removed items": "K\xFCrzlich entfernte Artikel",
-  "Recipe ID": "Rezept-ID",
-  "Recipe name": "Rezeptname",
   "Recipe overview": "Rezept\xFCbersicht",
   Recipes: "Rezepte",
   "Remove all items from the list": "Alle Artikel von der Liste entfernen",

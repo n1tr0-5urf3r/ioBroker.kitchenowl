@@ -36,6 +36,7 @@
 	"Perspective": "Perspective",
 	"Please enter a URL starting with http:// or https://": "Please enter a URL starting with http:// or https://",
 	"Poll interval": "Poll interval",
+	"Read recipes and the catalog every": "Read recipes and the catalog every",
 	"Recipes": "Recipes",
 	"Refresh delay after a write": "Refresh delay after a write",
 	"Request handling": "Request handling",
@@ -48,6 +49,7 @@
 	"Test connection": "Test connection",
 	"The server returns 30 expenses per page": "The server returns 30 expenses per page",
 	"These settings only apply to households that have the expenses feature enabled in KitchenOwl.": "These settings only apply to households that have the expenses feature enabled in KitchenOwl.",
+	"These two are by far the largest reads and change rarely. 1 reads them on every poll.": "These two are by far the largest reads and change rarely. 1 reads them on every poll.",
 	"Time frame": "Time frame",
 	"Verify TLS certificate": "Verify TLS certificate",
 	"Weekly": "Weekly",
@@ -57,5 +59,6 @@
 	"Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?": "Writable states can add, change and delete shopping list items, expenses and planner entries in KitchenOwl. Continue?",
 	"Write access": "Write access",
 	"Yearly": "Yearly",
-	"kitchenowl adapter settings": "Adapter settings for KitchenOwl"
+	"kitchenowl adapter settings": "Adapter settings for KitchenOwl",
+	"polls": "polls"
 }
