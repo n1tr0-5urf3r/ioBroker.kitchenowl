@@ -313,19 +313,47 @@ describe('KitchenOwlClient', () => {
 			expect(JSON.parse(requests[0].body)).to.deep.equal({ item_id: 10 });
 		});
 
-		it('names the planning to remove by its cooking date', async () => {
+		it('names the planning to remove by its cooking date, in the body', async () => {
 			respondJson({});
 			await client().removePlannedRecipe(1, 3, 1792368000000);
 
+			// The server validates everything but GET against the request body,
+			// so a query parameter here is simply not read.
 			expect(requests[0].method).to.equal('DELETE');
-			expect(requests[0].url).to.equal('/api/household/1/planner/recipe/3?cooking_date=1792368000000');
+			expect(requests[0].url).to.equal('/api/household/1/planner/recipe/3');
+			expect(JSON.parse(requests[0].body)).to.deep.equal({ cooking_date: 1792368000000 });
 		});
 
-		it('omits the cooking date when the planning has none', async () => {
+		it('still sends a body when the planning has no date', async () => {
 			respondJson({});
 			await client().removePlannedRecipe(1, 3);
 
-			expect(requests[0].url).to.equal('/api/household/1/planner/recipe/3');
+			// An empty body makes the server's argument parsing raise, so even
+			// "no arguments" has to be sent as {}.
+			expect(requests[0].body).to.equal('{}');
+		});
+
+		it('sends a body when deleting an expense', async () => {
+			respondJson({});
+			await client().deleteExpense(530);
+
+			expect(requests[0].method).to.equal('DELETE');
+			expect(requests[0].body).to.equal('{}');
+		});
+
+		it('never sends a bodyless request with a method other than GET', async () => {
+			respondJson([]);
+			const c = client();
+			await c.addShoppingListItemByName(2, 'Bread');
+			await c.removeShoppingListItem(2, 10);
+			await c.clearShoppingList(2);
+			await c.updateShoppingListItemDescription(2, 10, '1 kg');
+			await c.deleteExpense(530);
+			await c.removePlannedRecipe(1, 3, 1792368000000);
+			await c.addPlannedRecipe(1, { recipe_id: 3 });
+
+			const offenders = requests.filter(r => r.method !== 'GET' && r.body === '');
+			expect(offenders.map(r => `${r.method} ${r.url}`)).to.be.empty;
 		});
 
 		it('escapes the URL when importing a recipe', async () => {

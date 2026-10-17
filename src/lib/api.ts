@@ -387,7 +387,8 @@ export class KitchenOwlClient {
 	 * @param expenseId - Expense to delete
 	 */
 	public deleteExpense(expenseId: number): Promise<unknown> {
-		return this.request('DELETE', `/api/expense/${expenseId}`);
+		// An empty body would make the server's argument validation blow up.
+		return this.request('DELETE', `/api/expense/${expenseId}`, { body: {} });
 	}
 
 	/**
@@ -417,11 +418,13 @@ export class KitchenOwlClient {
 	 * @param cookingDate
 	 */
 	public removePlannedRecipe(householdId: number, recipeId: number, cookingDate?: number | null): Promise<unknown> {
-		// A recipe can sit on the plan more than once, so the date decides which
-		// entry goes. Without it the server looks for an unscheduled entry
-		// instead, which is a different thing entirely.
-		const query = typeof cookingDate === 'number' ? `?cooking_date=${cookingDate}` : '';
-		return this.request('DELETE', `/api/household/${householdId}/planner/recipe/${recipeId}${query}`);
+		// Everything but GET is validated against the request body, and the
+		// server parses that body without checking it is there, so a bodyless
+		// DELETE answers 500. The date belongs in it too: a recipe can sit on
+		// the plan more than once, and without it the server looks for an
+		// unscheduled entry instead.
+		const body = typeof cookingDate === 'number' ? { cooking_date: cookingDate } : {};
+		return this.request('DELETE', `/api/household/${householdId}/planner/recipe/${recipeId}`, { body });
 	}
 
 	/**

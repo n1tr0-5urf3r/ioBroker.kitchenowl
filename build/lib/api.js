@@ -296,7 +296,7 @@ class KitchenOwlClient {
    * @param expenseId - Expense to delete
    */
   deleteExpense(expenseId) {
-    return this.request("DELETE", `/api/expense/${expenseId}`);
+    return this.request("DELETE", `/api/expense/${expenseId}`, { body: {} });
   }
   /**
    * Asks the server to recompute every member balance.
@@ -323,8 +323,8 @@ class KitchenOwlClient {
    * @param cookingDate
    */
   removePlannedRecipe(householdId, recipeId, cookingDate) {
-    const query = typeof cookingDate === "number" ? `?cooking_date=${cookingDate}` : "";
-    return this.request("DELETE", `/api/household/${householdId}/planner/recipe/${recipeId}${query}`);
+    const body = typeof cookingDate === "number" ? { cooking_date: cookingDate } : {};
+    return this.request("DELETE", `/api/household/${householdId}/planner/recipe/${recipeId}`, { body });
   }
   /**
    * Imports a recipe from a public URL.
