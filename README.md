@@ -224,6 +224,17 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 <!--
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
+
+	The release script turns that heading into the version it is releasing and
+	copies the entries below it into common.news. Afterwards there is no such
+	heading any more, so anything added at the top of this list lands inside a
+	version that has already shipped and credits it with changes it does not
+	contain. Before adding an entry, check whether the first heading below is
+	a released version: if it is, add the placeholder line again above it and
+	write underneath that.
+
+	The heading has to be present for a release to run at all; without it the
+	script stops with "The changelog placeholder is missing from README.md!".
 -->
 ### **WORK IN PROGRESS**
 

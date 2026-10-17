@@ -32,4 +32,16 @@ describe('itemEmoji', () => {
 	it('handles a multi-codepoint emoji on a category', () => {
 		expect(itemEmoji(null, '👨‍👩‍👧 Familie')).to.equal('👨‍👩‍👧');
 	});
+
+	it('keeps a skin tone and the sequence it belongs to', () => {
+		// Taking only the first code point leaves 👩, which is a different
+		// picture: no cook, and not the skin tone the user picked.
+		expect(itemEmoji(null, '👩🏽‍🍳 Kochen')).to.equal('👩🏽‍🍳');
+		expect(itemEmoji(null, '🧑🏿‍🌾 Hof')).to.equal('🧑🏿‍🌾');
+	});
+
+	it('handles a flag and a keycap, which are sequences too', () => {
+		expect(itemEmoji(null, '🇩🇪 Deutsch')).to.equal('🇩🇪');
+		expect(itemEmoji(null, '1️⃣ Erste Wahl')).to.equal('1️⃣');
+	});
 });

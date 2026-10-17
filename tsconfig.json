@@ -4,6 +4,11 @@
 	// https://github.com/tsconfig/bases#node-22-tsconfigjson
 	"extends": "@tsconfig/node22/tsconfig.json",
 	"compilerOptions": {
+		// The adapter requires Node 22, which implements all of ES2024, and the
+		// base config already exposes the es2024 library. Raising the target to
+		// match allows the syntax too, such as the regular expression `v` flag.
+		"target": "es2024",
+
 		// do not compile anything, this file is just to configure type checking
 		// the compilation is configured in tsconfig.build.json
 		"noEmit": true,

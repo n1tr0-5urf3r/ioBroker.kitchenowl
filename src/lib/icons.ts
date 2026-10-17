@@ -414,8 +414,15 @@ const ITEM_EMOJI: Record<string, string> = {
 	yogurt: '🥛',
 	zipper: '🧵',
 };
-/** Matches a leading emoji, which KitchenOwl's category names almost always carry. */
-const LEADING_EMOJI = /^\s*(\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic})*)/u;
+/**
+ * Matches a leading emoji, which KitchenOwl's category names almost always carry.
+ *
+ * `RGI_Emoji` matches a whole sequence rather than its first character, which
+ * matters more than it looks: a skin tone, a flag and a ZWJ sequence are each
+ * several code points, and taking only the first turns 👩🏽‍🍳 into 👩 — a
+ * different picture, with the cook and the skin the user chose dropped.
+ */
+const LEADING_EMOJI = /^\s*(\p{RGI_Emoji})/v;
 
 /**
  * An emoji standing in for an item's icon.

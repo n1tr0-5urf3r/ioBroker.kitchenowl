@@ -426,7 +426,7 @@ const ITEM_EMOJI = {
   yogurt: "\u{1F95B}",
   zipper: "\u{1F9F5}"
 };
-const LEADING_EMOJI = new RegExp("^\\s*(\\p{Extended_Pictographic}(?:\uFE0F|\u200D\\p{Extended_Pictographic})*)", "u");
+const LEADING_EMOJI = new RegExp("^\\s*(\\p{RGI_Emoji})", "v");
 function itemEmoji(iconKey, categoryName) {
   var _a, _b;
   if (iconKey) {
