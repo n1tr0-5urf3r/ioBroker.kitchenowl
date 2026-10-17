@@ -12,7 +12,12 @@ iobroker.*.tgz
 
 Thumbs.db
 .commitinfo
-.commitmessage
+
+# .commitmessage is deliberately not ignored. The release script stages with
+# `git add -A -- :(exclude).commitmessage`, which git refuses outright once the
+# path is ignored, so the release fails. That pathspec already keeps the file
+# out of the release commit; it only reaches a commit if someone stages
+# everything by hand while a stopped release has left one behind.
 
 # i18n intermediate files
 admin/i18n/flat.txt
