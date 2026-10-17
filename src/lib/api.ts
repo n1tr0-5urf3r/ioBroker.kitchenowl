@@ -154,27 +154,41 @@ export class KitchenOwlClient {
 	/**
 	 * Downloads one photo.
 	 *
+	 * Goes through the same retry loop as every other call: a photo is fetched
+	 * once and then kept, so a timeout that is not retried costs that picture
+	 * until the adapter restarts.
+	 *
 	 * @param filename - Photo filename as the API reports it
 	 */
-	public async fetchPhoto(filename: string): Promise<Buffer> {
-		if (this.destroyed) {
-			throw new Error('Client has been destroyed');
-		}
+	public fetchPhoto(filename: string): Promise<Buffer> {
+		const path = `/api/upload/${encodeURIComponent(filename)}`;
 
-		const response = await fetch(`${this.baseUrl}/api/upload/${encodeURIComponent(filename)}`, {
-			headers: { Authorization: `Bearer ${this.token}` },
-			signal: AbortSignal.any([AbortSignal.timeout(this.timeout), this.abortController.signal]),
-			...(this.dispatcher ? { dispatcher: this.dispatcher } : {}),
+		return this.retrying(path, async () => {
+			const timeout = AbortSignal.timeout(this.timeout);
+			let response;
+
+			try {
+				response = await fetch(`${this.baseUrl}${path}`, {
+					headers: { Authorization: `Bearer ${this.token}` },
+					signal: AbortSignal.any([timeout, this.abortController.signal]),
+					...(this.dispatcher ? { dispatcher: this.dispatcher } : {}),
+				});
+			} catch (error) {
+				if (timeout.aborted) {
+					throw new Error(`Downloading ${filename} timed out after ${this.timeout} ms`);
+				}
+				throw error;
+			}
+
+			if (!response.ok) {
+				throw new KitchenOwlApiError(
+					`Downloading ${filename} returned ${response.status} ${response.statusText}`,
+					response.status,
+					path,
+				);
+			}
+			return Buffer.from(await response.arrayBuffer());
 		});
-
-		if (!response.ok) {
-			throw new KitchenOwlApiError(
-				`Downloading ${filename} returned ${response.status} ${response.statusText}`,
-				response.status,
-				`/api/upload/${filename}`,
-			);
-		}
-		return Buffer.from(await response.arrayBuffer());
 	}
 
 	// --- reads -------------------------------------------------------------
@@ -454,7 +468,7 @@ export class KitchenOwlClient {
 	 *
 	 * @param householdId - Household to act on
 	 * @param recipeId - Recipe to act on
-	 * @param cookingDate
+	 * @param cookingDate - Date the meal is planned for, when the entry carries one
 	 */
 	public removePlannedRecipe(householdId: number, recipeId: number, cookingDate?: number | null): Promise<unknown> {
 		// Everything but GET is validated against the request body, and the
@@ -491,23 +505,37 @@ export class KitchenOwlClient {
 	 * @param options.body - JSON body to send
 	 * @param options.auth - Set to false for endpoints that take no token
 	 */
-	private async request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
+	private request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
+		return this.retrying(path, () => this.perform<T>(method, path, options), `${method} ${path}`);
+	}
+
+	/**
+	 * Repeats an attempt while the failure still looks temporary.
+	 *
+	 * A 4xx other than a rate limit or a timeout is the server saying no, which
+	 * another attempt will not change, so those are passed straight on.
+	 *
+	 * @param path - Request path, used in the error raised when nothing ran
+	 * @param attempt - Performs one attempt
+	 * @param label - How the call is named in the debug log
+	 */
+	private async retrying<T>(path: string, attempt: () => Promise<T>, label = `GET ${path}`): Promise<T> {
 		if (this.destroyed) {
 			throw new Error('Client has been destroyed');
 		}
 
 		let lastError: Error = new Error(`Request to ${path} never ran`);
 
-		for (let attempt = 0; attempt <= this.retries; attempt++) {
-			if (attempt > 0) {
-				await this.sleep(this.retryDelay * attempt);
+		for (let tries = 0; tries <= this.retries; tries++) {
+			if (tries > 0) {
+				await this.sleep(this.retryDelay * tries);
 				if (this.destroyed) {
 					throw new Error('Client has been destroyed');
 				}
 			}
 
 			try {
-				return await this.perform<T>(method, path, options);
+				return await attempt();
 			} catch (error) {
 				lastError = error as Error;
 
@@ -522,7 +550,7 @@ export class KitchenOwlClient {
 				if (this.destroyed) {
 					throw error;
 				}
-				this.log?.(`${method} ${path} failed (attempt ${attempt + 1}): ${lastError.message}`);
+				this.log?.(`${label} failed (attempt ${tries + 1}): ${lastError.message}`);
 			}
 		}
 

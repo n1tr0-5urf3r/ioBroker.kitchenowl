@@ -214,6 +214,7 @@ class ObjectWriter {
   async prune(prefixes) {
     const existing = await this.adapter.getAdapterObjectsAsync();
     const namespacePrefix = `${this.adapter.namespace}.`;
+    const untouched = [...this.untouched];
     const stale = [];
     for (const fullId of Object.keys(existing)) {
       if (!fullId.startsWith(namespacePrefix)) {
@@ -226,7 +227,7 @@ class ObjectWriter {
       if (this.seen.has(relativeId)) {
         continue;
       }
-      if ([...this.untouched].some((tree) => relativeId === tree || relativeId.startsWith(`${tree}.`))) {
+      if (untouched.some((tree) => relativeId === tree || relativeId.startsWith(`${tree}.`))) {
         continue;
       }
       stale.push(relativeId);

@@ -9,6 +9,8 @@ class FakeAdapter {
 	public readonly namespace = 'kitchenowl.0';
 	public readonly files = new Map<string, Buffer>();
 	public readonly warnings: string[] = [];
+	/** Ids a meta object was created for, so the HTTP side can be checked. */
+	public readonly metaObjects: string[] = [];
 	public readonly log = {
 		silly: (): void => {},
 		debug: (): void => {},
@@ -18,6 +20,13 @@ class FakeAdapter {
 		},
 		error: (): void => {},
 	};
+
+	public setForeignObjectNotExistsAsync(id: string, obj: { type: string }): Promise<void> {
+		if (obj.type === 'meta') {
+			this.metaObjects.push(id);
+		}
+		return Promise.resolve();
+	}
 
 	public readDirAsync(_ns: string, dir: string): Promise<{ file: string; isDir: boolean }[]> {
 		const prefix = `${dir}/`;
@@ -48,7 +57,7 @@ class FakeAdapter {
 /**
  * A client that records what it was asked to download.
  *
- * @param failOn
+ * @param failOn - Filenames the fake server refuses to hand over
  */
 function fakeClient(failOn: string[] = []): { fetched: string[]; client: KitchenOwlClient } {
 	const fetched: string[] = [];
@@ -125,6 +134,55 @@ describe('PhotoCache', () => {
 		// for as long as the adapter runs.
 		expect(fetched).to.deep.equal(['gone.jpg']);
 		expect(adapter.warnings).to.have.lengthOf(1);
+	});
+
+	it('tries a failed photo again later instead of writing it off until a restart', async () => {
+		const failing = ['gone.jpg'];
+		const fetched: string[] = [];
+		const client = {
+			fetchPhoto(filename: string): Promise<Buffer> {
+				fetched.push(filename);
+				return failing.includes(filename)
+					? Promise.reject(new Error('502 Bad Gateway'))
+					: Promise.resolve(Buffer.from('bytes'));
+			},
+		} as unknown as KitchenOwlClient;
+		const cache = new PhotoCache(adapter.asAdapter(), client);
+
+		// One bad gateway while the KitchenOwl container restarts.
+		await cache.store(['gone.jpg']);
+		expect(fetched).to.have.lengthOf(1);
+
+		// The server recovers, and the wait runs out without the adapter restarting.
+		failing.length = 0;
+		for (let poll = 0; poll < 12; poll++) {
+			await cache.store(['gone.jpg']);
+		}
+
+		expect(adapter.files.has(`${PHOTO_DIR}/gone.jpg`)).to.equal(true);
+		// Tried again, but nowhere near once a poll.
+		expect(fetched.length).to.be.greaterThan(1).and.lessThan(5);
+	});
+
+	it('repeats a failure quietly, so one unreachable photo does not fill the log', async () => {
+		const { client } = fakeClient(['gone.jpg']);
+		const cache = new PhotoCache(adapter.asAdapter(), client);
+
+		for (let poll = 0; poll < 40; poll++) {
+			await cache.store(['gone.jpg']);
+		}
+
+		// Several attempts over forty polls, but only the first one is a warning.
+		expect(adapter.warnings).to.have.lengthOf(1);
+	});
+
+	it('creates the meta object ioBroker needs to serve the files over HTTP', async () => {
+		const { client } = fakeClient();
+
+		await new PhotoCache(adapter.asAdapter(), client).store(['a.jpg']);
+
+		// Without it the copies exist but no visualisation can load them.
+		expect(adapter.metaObjects).to.deep.equal(['kitchenowl.0']);
 	});
 
 	it('picks up what an earlier run already downloaded', async () => {

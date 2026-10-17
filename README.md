@@ -81,7 +81,7 @@ member of. It does not expire until you revoke it in KitchenOwl.
 | --- | --- | --- |
 | Households to synchronize | all | Empty means every household visible to the token |
 | Poll interval | 300 s | Minimum 30 s |
-| Read recipes and the catalog every | 10 polls | These two are by far the largest reads and change rarely; 1 reads them on every poll |
+| Read recipes and the catalog every | 10 polls | These two are by far the largest reads and change rarely; 1 reads them on every poll. A refresh you ask for reads them whatever this says |
 | Members and expense balances | on | |
 | Shopping lists | on | |
 | Recipes | on | |
@@ -155,8 +155,9 @@ for an `<img>` tag, so the address on the server answers `Request unauthorized`.
 photo once into its own file storage and points `photoUrl` at that copy, something like
 `/kitchenowl.0/photos/<name>.jpg`, which ioBroker serves without a token and any visualization can load. Photos are
 named after a UUID upstream, so a picture is fetched once and only downloaded again when it actually changes; copies
-nothing refers to any more are removed. Turning **Download photos** off instead publishes the address on the
-KitchenOwl server, which then needs the token.
+nothing refers to any more are removed. Only photos some state actually points at are kept, so turning off **Create a
+state tree per recipe** or **Members** also stops their pictures being downloaded. Turning **Download photos** off
+instead publishes the address on the KitchenOwl server, which then needs the token.
 
 **About `icon`:** KitchenOwl's API hands out an icon *key* such as `honey`, and the artwork behind it is compiled
 into the KitchenOwl apps: no address serves it, and its licence forbids shipping a copy. The adapter therefore
@@ -228,11 +229,12 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 
 - (n1tr0-5urf3r) Photos are downloaded into the adapter's own file storage and `photoUrl` points at that copy, so a visualisation can show them. The address on the KitchenOwl server needs the API token, which a browser does not send, so loading one directly answered `Request unauthorized`
 - (n1tr0-5urf3r) Items report an emoji instead of KitchenOwl's icon key. The key named artwork that no address serves and whose licence forbids shipping a copy, so a visualisation showed a broken image and the word `honey`. All 403 upstream keys are covered, and an item without one falls back to the emoji on its category
-- (n1tr0-5urf3r) Recipes and the item catalog are read every tenth poll rather than every one. They are 93 % of the traffic a poll makes and change rarely, so a five minute interval now moves around 30 kB instead of 505 kB. The interval is configurable, and 1 restores the old behaviour
+- (n1tr0-5urf3r) Recipes and the item catalog are read every tenth poll rather than every one. They are 93 % of the traffic a poll makes and change rarely, so a five minute interval now moves around 30 kB instead of 505 kB. The interval is configurable, and 1 restores the old behaviour. A refresh you ask for reads them whatever the setting says, as does the refresh after importing a recipe or adding an item by a name the household has not used before, so a change you just made never waits for the next tenth poll
 - (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them. Each day now carries `count`, `recipeNames`, `date` and `json`; the singular `recipeId`, `recipeName` and `yields` are gone, because they described only the first meal and were quietly wrong on a day with two. The per-day button is now `removeAll` and clears every meal on that day, since one button cannot say which of several to drop
 - (n1tr0-5urf3r) Removing a planned meal and deleting an expense send a request body, without which the server answered with an error. Removing a planned meal also names the date it refers to, so the right one goes when a recipe is on the plan more than once, and pressing remove on an empty day does nothing instead of logging an error
 - (n1tr0-5urf3r) Clearing a shopping list names the items to remove, which is what the endpoint expects; it answered with an error before
 - (n1tr0-5urf3r) Adding an expense documents and checks the fields the server actually requires: `paid_by` and `paid_for` are objects, and there is no `paid_by_id`
+- (n1tr0-5urf3r) Writing to a state the adapter does not recognise as a command says so in the log instead of doing nothing quietly, which matters after a rename such as the planner's `remove` becoming `removeAll`
 
 ### 0.0.4 (2026-10-17)
 

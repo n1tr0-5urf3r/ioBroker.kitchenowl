@@ -96,6 +96,63 @@ describe('KitchenOwlClient', () => {
 		expect(client().photoUrl('a b.jpg')).to.equal(`${baseUrl}/api/upload/a%20b.jpg`);
 	});
 
+	it('points photo URLs at a local copy once one is being kept', () => {
+		// The address on the server needs the token, which a browser never sends.
+		expect(client({ photoBase: '/kitchenowl.0/photos/' }).photoUrl('a b.jpg')).to.equal(
+			'/kitchenowl.0/photos/a%20b.jpg',
+		);
+	});
+
+	describe('fetchPhoto', () => {
+		it('downloads the bytes with the token attached', async () => {
+			handler = (_req, res) => {
+				res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+				res.end(Buffer.from([1, 2, 3]));
+			};
+
+			const bytes = await client().fetchPhoto('a b.jpg');
+
+			expect(requests[0].url).to.equal('/api/upload/a%20b.jpg');
+			expect(requests[0].authorization).to.equal('Bearer test-token');
+			expect([...bytes]).to.deep.equal([1, 2, 3]);
+		});
+
+		it('retries a temporary failure, since a photo is only fetched once', async () => {
+			let attempts = 0;
+			handler = (_req, res) => {
+				attempts++;
+				if (attempts < 3) {
+					res.writeHead(502);
+					res.end('bad gateway');
+					return;
+				}
+				res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+				res.end(Buffer.from([7]));
+			};
+
+			const bytes = await client({ retries: 3, retryDelay: 1 }).fetchPhoto('late.jpg');
+
+			expect(attempts).to.equal(3);
+			expect([...bytes]).to.deep.equal([7]);
+		});
+
+		it('does not retry a photo the server says is not there', async () => {
+			handler = (_req, res) => {
+				res.writeHead(404);
+				res.end('not found');
+			};
+
+			await client({ retries: 3, retryDelay: 1 })
+				.fetchPhoto('gone.jpg')
+				.then(
+					() => expect.fail('should have thrown'),
+					(error: KitchenOwlApiError) => expect(error.status).to.equal(404),
+				);
+
+			expect(requests).to.have.lengthOf(1);
+		});
+	});
+
 	describe('error handling', () => {
 		it('raises a typed error carrying the status code', async () => {
 			handler = (_req, res) => {

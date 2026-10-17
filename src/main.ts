@@ -5,7 +5,7 @@
 import * as utils from '@iobroker/adapter-core';
 
 import { KitchenOwlApiError, KitchenOwlClient } from './lib/api';
-import { parseCommand, runCommand } from './lib/commands';
+import { type ParsedCommand, parseCommand, runCommand } from './lib/commands';
 import { connectionOptions, selectHouseholds } from './lib/instance';
 import { type ObjectCache, ObjectWriter } from './lib/objects';
 import { PhotoCache } from './lib/photos';
@@ -21,6 +21,17 @@ import {
 	syncShoppingLists,
 } from './lib/sync';
 import type { Household, PlannerEntry } from './lib/types';
+
+/**
+ * Commands whose result lands in a branch that a routine poll skips, so the
+ * refresh afterwards has to read that branch even when it is not its turn.
+ */
+const SLOW_BRANCH_COMMANDS: ReadonlySet<ParsedCommand['kind']> = new Set([
+	// An imported recipe appears in the recipe branch.
+	'recipes.scrapeUrl',
+	// A name the household has not used before becomes a new catalog item.
+	'shoppingList.addItemByName',
+]);
 
 class Kitchenowl extends utils.Adapter {
 	private client?: KitchenOwlClient;
@@ -40,6 +51,9 @@ class Kitchenowl extends utils.Adapter {
 	private readonly plannerCache = new Map<number, PlannerEntry[]>();
 	/** Counts polls, so the slow branches can sit most of them out. */
 	private pollCount = 0;
+	/** Set when the next poll has to read the slow branches whatever the count says. */
+	private forceSlow = false;
+	/** Local copies of the photos, when the instance is configured to keep them. */
 	private photos?: PhotoCache;
 	/** Photos seen this poll, so unreferenced copies can be cleaned up. */
 	private photosSeen = new Set<string>();
@@ -83,6 +97,10 @@ class Kitchenowl extends utils.Adapter {
 			log: message => this.log.debug(message),
 		});
 
+		if (this.config.cachePhotos) {
+			this.photos = new PhotoCache(this, this.client);
+		}
+
 		await this.subscribeStatesAsync('commands.refresh');
 		if (this.config.enableWrite) {
 			await this.subscribeStatesAsync('households.*');
@@ -121,8 +139,11 @@ class Kitchenowl extends utils.Adapter {
 			// Recipes and the item catalog are the big, slow, rarely changing
 			// reads, so they sit out most polls. The first poll always takes
 			// them, otherwise a fresh start would show an empty recipe branch.
+			// A refresh the user asked for, or one that follows a write landing in
+			// one of these branches, reads them whether or not it is their turn.
 			const factor = Math.max(1, this.config.slowPollFactor || 1);
-			const withSlow = this.pollCount % factor === 0;
+			const withSlow = this.forceSlow || this.pollCount % factor === 0;
+			this.forceSlow = false;
 			this.pollCount++;
 
 			const writer = new ObjectWriter(this, this.objectCache);
@@ -209,16 +230,19 @@ class Kitchenowl extends utils.Adapter {
 	 *
 	 * @param writer - Collector the states are added to
 	 * @param household - Household being written
-	 * @param withSlow
+	 * @param withSlow - Whether this poll also reads the recipes and the catalog
 	 */
 	private async syncOneHousehold(writer: ObjectWriter, household: Household, withSlow: boolean): Promise<void> {
 		const client = this.client!;
 		const base = householdBase(household);
 		const config = this.syncConfig();
 
+		// Only a photo some state actually points at is worth downloading.
 		this.rememberPhoto(household.photo);
-		for (const member of household.member ?? []) {
-			this.rememberPhoto(member.photo);
+		if (config.syncMembers) {
+			for (const member of household.member ?? []) {
+				this.rememberPhoto(member.photo);
+			}
 		}
 
 		syncHousehold(writer, client, base, household);
@@ -234,8 +258,11 @@ class Kitchenowl extends utils.Adapter {
 		if (config.syncRecipes) {
 			if (withSlow) {
 				const recipes = await client.recipes(household.id);
-				for (const recipe of recipes) {
-					this.rememberPhoto(recipe.photo);
+				// Only the per-recipe branch carries a photoUrl; the overview does not.
+				if (config.createRecipeObjects) {
+					for (const recipe of recipes) {
+						this.rememberPhoto(recipe.photo);
+					}
 				}
 				syncRecipes(writer, client, base, recipes, config);
 			} else {
@@ -264,9 +291,8 @@ class Kitchenowl extends utils.Adapter {
 					config.expenseView,
 				),
 			]);
-			for (const expense of expenses) {
-				this.rememberPhoto(expense.photo);
-			}
+			// Expenses carry a photo upstream, but no state here points at one, so
+			// downloading them would fill the cache with pictures nothing shows.
 			syncExpenses(writer, base, expenses, categories, overview, config, memberNames);
 		}
 
@@ -373,6 +399,9 @@ class Kitchenowl extends utils.Adapter {
 
 		const command = parseCommand(relativeId);
 		if (!command) {
+			// Usually a button left behind by an older version, whose name changed
+			// under it. Silence here leaves a user pressing it with nothing to go on.
+			this.log.warn(`Ignoring a write to ${relativeId}: this version has no command by that name`);
 			return;
 		}
 
@@ -398,22 +427,36 @@ class Kitchenowl extends utils.Adapter {
 
 			// Acknowledge so the state reflects that the command was carried out.
 			await this.setState(relativeId, { val: state.val, ack: true });
-			this.scheduleRefresh();
+			this.scheduleRefresh(SLOW_BRANCH_COMMANDS.has(command.kind));
 		} catch (error) {
 			this.log.error(`Command ${command.kind} failed: ${(error as Error).message}`);
 			await this.setStateChangedAsync('info.lastError', { val: (error as Error).message, ack: true });
 		}
 	}
 
-	/** Re-reads the server shortly after a write, so the tree catches up. */
-	private scheduleRefresh(): void {
-		if (this.unloading || this.refreshTimer) {
+	/**
+	 * Re-reads the server shortly after a write, so the tree catches up.
+	 *
+	 * @param withSlow - Whether the command landed in a branch a routine poll skips
+	 */
+	private scheduleRefresh(withSlow: boolean): void {
+		if (this.unloading) {
 			return;
 		}
+		// A second write inside the delay joins the refresh already pending, so
+		// its need for the slow branches is recorded here rather than dropped.
+		if (withSlow) {
+			this.forceSlow = true;
+		}
+		if (this.refreshTimer) {
+			return;
+		}
+
 		const delay = Math.max(0, this.config.writeRefreshDelay ?? 1500);
 		this.refreshTimer = this.setTimeout(() => {
 			this.refreshTimer = undefined;
-			void this.refreshNow();
+			// Whether the slow branches are due is already recorded above.
+			void this.refreshNow(false);
 		}, delay);
 	}
 
@@ -422,8 +465,18 @@ class Kitchenowl extends utils.Adapter {
 	 *
 	 * Returns what happened, so that a caller waiting on the message box is not
 	 * told the data is current when the poll has yet to start.
+	 *
+	 * @param withSlow - Also read the recipes and the catalog, which a routine
+	 *   poll skips most of the time. A refresh someone asked for says yes: the
+	 *   point of pressing it is to see the server as it is now.
 	 */
-	private async refreshNow(): Promise<string> {
+	private async refreshNow(withSlow = true): Promise<string> {
+		// Recorded before the early return, so a poll already running hands the
+		// request on to the one that follows it.
+		if (withSlow) {
+			this.forceSlow = true;
+		}
+
 		if (this.polling) {
 			this.pollAgain = true;
 			return 'A poll is already running; another one follows right after it';

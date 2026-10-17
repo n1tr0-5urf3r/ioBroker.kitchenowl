@@ -292,6 +292,8 @@ export class ObjectWriter {
 	public async prune(prefixes: string[]): Promise<number> {
 		const existing = await this.adapter.getAdapterObjectsAsync();
 		const namespacePrefix = `${this.adapter.namespace}.`;
+		// Built once: the loop below runs over every object the adapter owns.
+		const untouched = [...this.untouched];
 		const stale: string[] = [];
 
 		for (const fullId of Object.keys(existing)) {
@@ -306,7 +308,7 @@ export class ObjectWriter {
 			if (this.seen.has(relativeId)) {
 				continue;
 			}
-			if ([...this.untouched].some(tree => relativeId === tree || relativeId.startsWith(`${tree}.`))) {
+			if (untouched.some(tree => relativeId === tree || relativeId.startsWith(`${tree}.`))) {
 				continue;
 			}
 			stale.push(relativeId);

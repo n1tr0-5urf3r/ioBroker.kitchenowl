@@ -28,6 +28,12 @@ var import_instance = require("./lib/instance");
 var import_objects = require("./lib/objects");
 var import_photos = require("./lib/photos");
 var import_sync = require("./lib/sync");
+const SLOW_BRANCH_COMMANDS = /* @__PURE__ */ new Set([
+  // An imported recipe appears in the recipe branch.
+  "recipes.scrapeUrl",
+  // A name the household has not used before becomes a new catalog item.
+  "shoppingList.addItemByName"
+]);
 class Kitchenowl extends utils.Adapter {
   client;
   pollTimer;
@@ -46,6 +52,9 @@ class Kitchenowl extends utils.Adapter {
   plannerCache = /* @__PURE__ */ new Map();
   /** Counts polls, so the slow branches can sit most of them out. */
   pollCount = 0;
+  /** Set when the next poll has to read the slow branches whatever the count says. */
+  forceSlow = false;
+  /** Local copies of the photos, when the instance is configured to keep them. */
   photos;
   /** Photos seen this poll, so unreferenced copies can be cleaned up. */
   photosSeen = /* @__PURE__ */ new Set();
@@ -83,6 +92,9 @@ class Kitchenowl extends utils.Adapter {
       rejectUnauthorized: this.config.rejectUnauthorized,
       log: (message) => this.log.debug(message)
     });
+    if (this.config.cachePhotos) {
+      this.photos = new import_photos.PhotoCache(this, this.client);
+    }
     await this.subscribeStatesAsync("commands.refresh");
     if (this.config.enableWrite) {
       await this.subscribeStatesAsync("households.*");
@@ -112,7 +124,8 @@ class Kitchenowl extends utils.Adapter {
         this.log.warn("No matching household was found for the configured token.");
       }
       const factor = Math.max(1, this.config.slowPollFactor || 1);
-      const withSlow = this.pollCount % factor === 0;
+      const withSlow = this.forceSlow || this.pollCount % factor === 0;
+      this.forceSlow = false;
       this.pollCount++;
       const writer = new import_objects.ObjectWriter(this, this.objectCache);
       writer.channel("households", "Households", "folder");
@@ -180,7 +193,7 @@ class Kitchenowl extends utils.Adapter {
    *
    * @param writer - Collector the states are added to
    * @param household - Household being written
-   * @param withSlow
+   * @param withSlow - Whether this poll also reads the recipes and the catalog
    */
   async syncOneHousehold(writer, household, withSlow) {
     var _a, _b;
@@ -188,8 +201,10 @@ class Kitchenowl extends utils.Adapter {
     const base = (0, import_sync.householdBase)(household);
     const config = this.syncConfig();
     this.rememberPhoto(household.photo);
-    for (const member of (_a = household.member) != null ? _a : []) {
-      this.rememberPhoto(member.photo);
+    if (config.syncMembers) {
+      for (const member of (_a = household.member) != null ? _a : []) {
+        this.rememberPhoto(member.photo);
+      }
     }
     (0, import_sync.syncHousehold)(writer, client, base, household);
     if (config.syncMembers) {
@@ -201,8 +216,10 @@ class Kitchenowl extends utils.Adapter {
     if (config.syncRecipes) {
       if (withSlow) {
         const recipes = await client.recipes(household.id);
-        for (const recipe of recipes) {
-          this.rememberPhoto(recipe.photo);
+        if (config.createRecipeObjects) {
+          for (const recipe of recipes) {
+            this.rememberPhoto(recipe.photo);
+          }
         }
         (0, import_sync.syncRecipes)(writer, client, base, recipes, config);
       } else {
@@ -226,9 +243,6 @@ class Kitchenowl extends utils.Adapter {
           config.expenseView
         )
       ]);
-      for (const expense of expenses) {
-        this.rememberPhoto(expense.photo);
-      }
       (0, import_sync.syncExpenses)(writer, base, expenses, categories, overview, config, memberNames);
     }
     if (config.syncCatalog) {
@@ -321,6 +335,7 @@ class Kitchenowl extends utils.Adapter {
     }
     const command = (0, import_commands.parseCommand)(relativeId);
     if (!command) {
+      this.log.warn(`Ignoring a write to ${relativeId}: this version has no command by that name`);
       return;
     }
     try {
@@ -344,22 +359,32 @@ class Kitchenowl extends utils.Adapter {
         });
       }
       await this.setState(relativeId, { val: state.val, ack: true });
-      this.scheduleRefresh();
+      this.scheduleRefresh(SLOW_BRANCH_COMMANDS.has(command.kind));
     } catch (error) {
       this.log.error(`Command ${command.kind} failed: ${error.message}`);
       await this.setStateChangedAsync("info.lastError", { val: error.message, ack: true });
     }
   }
-  /** Re-reads the server shortly after a write, so the tree catches up. */
-  scheduleRefresh() {
+  /**
+   * Re-reads the server shortly after a write, so the tree catches up.
+   *
+   * @param withSlow - Whether the command landed in a branch a routine poll skips
+   */
+  scheduleRefresh(withSlow) {
     var _a;
-    if (this.unloading || this.refreshTimer) {
+    if (this.unloading) {
+      return;
+    }
+    if (withSlow) {
+      this.forceSlow = true;
+    }
+    if (this.refreshTimer) {
       return;
     }
     const delay = Math.max(0, (_a = this.config.writeRefreshDelay) != null ? _a : 1500);
     this.refreshTimer = this.setTimeout(() => {
       this.refreshTimer = void 0;
-      void this.refreshNow();
+      void this.refreshNow(false);
     }, delay);
   }
   /**
@@ -367,8 +392,15 @@ class Kitchenowl extends utils.Adapter {
    *
    * Returns what happened, so that a caller waiting on the message box is not
    * told the data is current when the poll has yet to start.
+   *
+   * @param withSlow - Also read the recipes and the catalog, which a routine
+   *   poll skips most of the time. A refresh someone asked for says yes: the
+   *   point of pressing it is to see the server as it is now.
    */
-  async refreshNow() {
+  async refreshNow(withSlow = true) {
+    if (withSlow) {
+      this.forceSlow = true;
+    }
     if (this.polling) {
       this.pollAgain = true;
       return "A poll is already running; another one follows right after it";
