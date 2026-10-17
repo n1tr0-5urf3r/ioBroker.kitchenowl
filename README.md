@@ -138,8 +138,7 @@ kitchenowl.<instance>
     │                           plannedDays, visibility, itemsJson
     ├── planner
     │   ├── count, json, nextRecipeName, nextRecipeId, nextCookingDate
-    │   └── days.<0-6>          count, recipeNames, json, and date, recipeId,
-    │                           recipeName, yields for the first meal
+    │   └── days.<0-6>          count, recipeNames, date, json
     ├── expenses
     │   ├── count, recentJson, overviewJson, currentPeriodTotal
     │   ├── newestName, newestAmount, newestDate, newestPaidBy
@@ -211,7 +210,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 -->
 ### **WORK IN PROGRESS**
 
-- (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them: `count`, `recipeNames` and `json` next to the existing states for the first meal. The per-day button is now `removeAll` and clears every meal on that day, because one button cannot say which of several to drop
+- (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them. Each day now carries `count`, `recipeNames`, `date` and `json`; the singular `recipeId`, `recipeName` and `yields` are gone, because they described only the first meal and were quietly wrong on a day with two. The per-day button is now `removeAll` and clears every meal on that day, since one button cannot say which of several to drop
 - (n1tr0-5urf3r) Removing a planned meal and deleting an expense send a request body, without which the server answered with an error. Removing a planned meal also names the date it refers to, so the right one goes when a recipe is on the plan more than once, and pressing remove on an empty day does nothing instead of logging an error
 - (n1tr0-5urf3r) Clearing a shopping list names the items to remove, which is what the endpoint expects; it answered with an error before
 - (n1tr0-5urf3r) Adding an expense documents and checks the fields the server actually requires: `paid_by` and `paid_for` are objects, and there is no `paid_by_id`

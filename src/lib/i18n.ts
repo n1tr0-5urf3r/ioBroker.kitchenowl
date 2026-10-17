@@ -80,8 +80,6 @@ const GERMAN: Record<string, string> = {
 	'Recalculate member balances': 'Mitgliedersalden neu berechnen',
 	'Recent expenses': 'Aktuelle Ausgaben',
 	'Recently removed items': 'Kürzlich entfernte Artikel',
-	'Recipe ID': 'Rezept-ID',
-	'Recipe name': 'Rezeptname',
 	'Recipe overview': 'Rezeptübersicht',
 	Recipes: 'Rezepte',
 	'Remove all items from the list': 'Alle Artikel von der Liste entfernen',

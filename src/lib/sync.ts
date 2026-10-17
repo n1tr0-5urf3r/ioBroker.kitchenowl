@@ -428,10 +428,12 @@ export function syncPlanner(
 		// A planner entry's `day` is -1 when it falls outside the coming week,
 		// and a day can carry more than one meal.
 		const onThisDay = entries.filter(candidate => candidate.day === day);
-		const first = onThisDay[0];
 
 		writer.channel(id, WEEKDAYS[day]);
 		writer.value(`${id}.count`, 'Meals on this day', 'number', 'value', onThisDay.length);
+		// Every meal of the day, so nothing is hidden. There is deliberately no
+		// singular recipeName beside this: it could only ever describe the first
+		// meal, which is quietly wrong on a day that holds two.
 		writer.value(
 			`${id}.recipeNames`,
 			'Recipe names',
@@ -449,13 +451,8 @@ export function syncPlanner(
 				cookingDate: toTimestamp(entry.cooking_date),
 			})),
 		);
-
-		// The singular states describe the first meal, which is all there is on
-		// almost every day; count and recipeNames cover the rest.
-		writer.value(`${id}.recipeId`, 'Recipe ID', 'number', 'value', first?.recipe_id ?? 0);
-		writer.value(`${id}.recipeName`, 'Recipe name', 'string', 'text', first?.recipe?.name ?? '');
-		writer.value(`${id}.yields`, 'Servings', 'number', 'value', first?.yields ?? 0);
-		writer.value(`${id}.date`, 'Cooking date', 'number', 'value.time', toTimestamp(first?.cooking_date));
+		// Every meal on a weekday shares its date, so this one stays singular.
+		writer.value(`${id}.date`, 'Cooking date', 'number', 'value.time', toTimestamp(onThisDay[0]?.cooking_date));
 
 		if (config.enableWrite) {
 			// Named for what it does: one button per day cannot say which of

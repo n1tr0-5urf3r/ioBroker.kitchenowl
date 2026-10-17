@@ -266,11 +266,28 @@ describe('sync', () => {
 			syncPlanner(writer, base(), entries(), config(), beforeBoth);
 			await writer.flush();
 
-			expect(adapter.states.get('households.1.planner.days.2.recipeName')).to.equal('Tomato Soup');
-			expect(adapter.states.get('households.1.planner.days.2.recipeId')).to.equal(20);
-			expect(adapter.states.get('households.1.planner.days.2.yields')).to.equal(4);
-			expect(adapter.states.get('households.1.planner.days.0.recipeName')).to.equal('');
-			expect(adapter.states.get('households.1.planner.days.0.recipeId')).to.equal(0);
+			expect(adapter.states.get('households.1.planner.days.2.count')).to.equal(1);
+			expect(adapter.states.get('households.1.planner.days.2.recipeNames')).to.equal('Tomato Soup');
+			expect(JSON.parse(adapter.states.get('households.1.planner.days.2.json') as string)).to.deep.equal([
+				{ recipeId: 20, recipeName: 'Tomato Soup', yields: 4, cookingDate: 1700100000000 },
+			]);
+
+			expect(adapter.states.get('households.1.planner.days.0.count')).to.equal(0);
+			expect(adapter.states.get('households.1.planner.days.0.recipeNames')).to.equal('');
+			expect(adapter.states.get('households.1.planner.days.0.date')).to.equal(null);
+		});
+
+		it('lists every meal when a weekday holds more than one', async () => {
+			const base2 = entries().map(entry => ({ ...entry, day: 2 }));
+			const second = { ...base2[0], recipe_id: 21, recipe: { id: 21, name: 'Pancakes', household_id: 1 } };
+			syncPlanner(writer, base(), [...base2, second] as PlannerEntry[], config(), beforeBoth);
+			await writer.flush();
+
+			// There is no singular recipeName here that could be quietly wrong.
+			expect(adapter.states.get('households.1.planner.days.2.count')).to.equal(3);
+			expect(adapter.states.get('households.1.planner.days.2.recipeNames')).to.contain('Pancakes');
+			expect(adapter.objects.has('households.1.planner.days.2.recipeName')).to.equal(false);
+			expect(adapter.objects.has('households.1.planner.days.2.recipeId')).to.equal(false);
 		});
 
 		it('creates a channel for all seven weekdays', async () => {

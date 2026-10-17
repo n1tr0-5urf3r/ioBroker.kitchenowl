@@ -249,7 +249,7 @@ function syncRecipes(writer, client, base, recipes, config) {
   }
 }
 function syncPlanner(writer, base, entries, config, now = Date.now()) {
-  var _a, _b, _c, _d, _e, _f, _g;
+  var _a, _b, _c, _d;
   const root = `${base}.planner`;
   writer.channel(root, "Meal planner");
   writer.value(`${root}.count`, "Number of planned meals", "number", "value", entries.length);
@@ -300,7 +300,6 @@ function syncPlanner(writer, base, entries, config, now = Date.now()) {
   for (let day = 0; day < WEEKDAYS.length; day++) {
     const id = `${daysRoot}.${day}`;
     const onThisDay = entries.filter((candidate) => candidate.day === day);
-    const first = onThisDay[0];
     writer.channel(id, WEEKDAYS[day]);
     writer.value(`${id}.count`, "Meals on this day", "number", "value", onThisDay.length);
     writer.value(
@@ -326,10 +325,7 @@ function syncPlanner(writer, base, entries, config, now = Date.now()) {
         };
       })
     );
-    writer.value(`${id}.recipeId`, "Recipe ID", "number", "value", (_d = first == null ? void 0 : first.recipe_id) != null ? _d : 0);
-    writer.value(`${id}.recipeName`, "Recipe name", "string", "text", (_f = (_e = first == null ? void 0 : first.recipe) == null ? void 0 : _e.name) != null ? _f : "");
-    writer.value(`${id}.yields`, "Servings", "number", "value", (_g = first == null ? void 0 : first.yields) != null ? _g : 0);
-    writer.value(`${id}.date`, "Cooking date", "number", "value.time", (0, import_ids.toTimestamp)(first == null ? void 0 : first.cooking_date));
+    writer.value(`${id}.date`, "Cooking date", "number", "value.time", (0, import_ids.toTimestamp)((_d = onThisDay[0]) == null ? void 0 : _d.cooking_date));
     if (config.enableWrite) {
       writer.button(`${id}.removeAll`, "Remove every meal planned on this day");
     }
