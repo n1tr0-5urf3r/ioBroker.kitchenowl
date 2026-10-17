@@ -149,6 +149,10 @@ kitchenowl.<instance>
         └── itemsJson, itemCount, categoriesJson, categoryCount, tagsJson, tagCount
 ```
 
+**About `photoUrl`:** the address is real, but the endpoint needs the API token, and a browser does not send it
+with an `<img>` tag. Loading one straight from a visualization answers `Request unauthorized`. Fetch it server side,
+in a script that can set the `Authorization` header, or cache a copy somewhere your visualization can read.
+
 **About `icon`:** this is KitchenOwl's own icon *key*, such as `ketchup` or `apple` — not an image, a URL or an
 emoji. The icons are compiled into the KitchenOwl apps and the server does not serve them at any address, so a
 visualization cannot load them from your instance. They are also Icons8 artwork that may not be redistributed, so
