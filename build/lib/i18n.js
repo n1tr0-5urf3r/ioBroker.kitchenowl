@@ -22,6 +22,10 @@ __export(i18n_exports, {
 });
 module.exports = __toCommonJS(i18n_exports);
 const GERMAN = {
+  "Remove every meal planned on this day": "Alle an diesem Tag geplanten Mahlzeiten entfernen",
+  "Meals planned on this day": "An diesem Tag geplante Mahlzeiten",
+  "Recipe names": "Rezeptnamen",
+  "Meals on this day": "Mahlzeiten an diesem Tag",
   Colour: "Farbe",
   "Newest expense paid by": "Neueste Ausgabe bezahlt von",
   "Adapter commands": "Adapterbefehle",
@@ -95,7 +99,6 @@ const GERMAN = {
   Recipes: "Rezepte",
   "Remove all items from the list": "Alle Artikel von der Liste entfernen",
   "Remove this item from the list": "Diesen Artikel von der Liste entfernen",
-  "Remove this meal from the plan": "Diese Mahlzeit aus dem Plan entfernen",
   "Result of the last import": "Ergebnis des letzten Imports",
   Saturday: "Samstag",
   Servings: "Portionen",

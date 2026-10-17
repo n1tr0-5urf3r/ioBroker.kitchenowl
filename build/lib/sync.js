@@ -299,14 +299,39 @@ function syncPlanner(writer, base, entries, config, now = Date.now()) {
   writer.channel(daysRoot, "Planned meals by weekday");
   for (let day = 0; day < WEEKDAYS.length; day++) {
     const id = `${daysRoot}.${day}`;
-    const entry = entries.find((candidate) => candidate.day === day);
+    const onThisDay = entries.filter((candidate) => candidate.day === day);
+    const first = onThisDay[0];
     writer.channel(id, WEEKDAYS[day]);
-    writer.value(`${id}.recipeId`, "Recipe ID", "number", "value", (_d = entry == null ? void 0 : entry.recipe_id) != null ? _d : 0);
-    writer.value(`${id}.recipeName`, "Recipe name", "string", "text", (_f = (_e = entry == null ? void 0 : entry.recipe) == null ? void 0 : _e.name) != null ? _f : "");
-    writer.value(`${id}.yields`, "Servings", "number", "value", (_g = entry == null ? void 0 : entry.yields) != null ? _g : 0);
-    writer.value(`${id}.date`, "Cooking date", "number", "value.time", (0, import_ids.toTimestamp)(entry == null ? void 0 : entry.cooking_date));
+    writer.value(`${id}.count`, "Meals on this day", "number", "value", onThisDay.length);
+    writer.value(
+      `${id}.recipeNames`,
+      "Recipe names",
+      "string",
+      "text",
+      onThisDay.map((entry) => {
+        var _a2, _b2;
+        return (_b2 = (_a2 = entry.recipe) == null ? void 0 : _a2.name) != null ? _b2 : "";
+      }).join(", ")
+    );
+    writer.json(
+      `${id}.json`,
+      "Meals planned on this day",
+      onThisDay.map((entry) => {
+        var _a2, _b2, _c2;
+        return {
+          recipeId: entry.recipe_id,
+          recipeName: (_b2 = (_a2 = entry.recipe) == null ? void 0 : _a2.name) != null ? _b2 : "",
+          yields: (_c2 = entry.yields) != null ? _c2 : null,
+          cookingDate: (0, import_ids.toTimestamp)(entry.cooking_date)
+        };
+      })
+    );
+    writer.value(`${id}.recipeId`, "Recipe ID", "number", "value", (_d = first == null ? void 0 : first.recipe_id) != null ? _d : 0);
+    writer.value(`${id}.recipeName`, "Recipe name", "string", "text", (_f = (_e = first == null ? void 0 : first.recipe) == null ? void 0 : _e.name) != null ? _f : "");
+    writer.value(`${id}.yields`, "Servings", "number", "value", (_g = first == null ? void 0 : first.yields) != null ? _g : 0);
+    writer.value(`${id}.date`, "Cooking date", "number", "value.time", (0, import_ids.toTimestamp)(first == null ? void 0 : first.cooking_date));
     if (config.enableWrite) {
-      writer.button(`${id}.remove`, "Remove this meal from the plan");
+      writer.button(`${id}.removeAll`, "Remove every meal planned on this day");
     }
   }
 }

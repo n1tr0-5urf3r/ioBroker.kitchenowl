@@ -425,17 +425,42 @@ export function syncPlanner(
 
 	for (let day = 0; day < WEEKDAYS.length; day++) {
 		const id = `${daysRoot}.${day}`;
-		// A planner entry's `day` is -1 when it falls outside the coming week.
-		const entry = entries.find(candidate => candidate.day === day);
+		// A planner entry's `day` is -1 when it falls outside the coming week,
+		// and a day can carry more than one meal.
+		const onThisDay = entries.filter(candidate => candidate.day === day);
+		const first = onThisDay[0];
 
 		writer.channel(id, WEEKDAYS[day]);
-		writer.value(`${id}.recipeId`, 'Recipe ID', 'number', 'value', entry?.recipe_id ?? 0);
-		writer.value(`${id}.recipeName`, 'Recipe name', 'string', 'text', entry?.recipe?.name ?? '');
-		writer.value(`${id}.yields`, 'Servings', 'number', 'value', entry?.yields ?? 0);
-		writer.value(`${id}.date`, 'Cooking date', 'number', 'value.time', toTimestamp(entry?.cooking_date));
+		writer.value(`${id}.count`, 'Meals on this day', 'number', 'value', onThisDay.length);
+		writer.value(
+			`${id}.recipeNames`,
+			'Recipe names',
+			'string',
+			'text',
+			onThisDay.map(entry => entry.recipe?.name ?? '').join(', '),
+		);
+		writer.json(
+			`${id}.json`,
+			'Meals planned on this day',
+			onThisDay.map(entry => ({
+				recipeId: entry.recipe_id,
+				recipeName: entry.recipe?.name ?? '',
+				yields: entry.yields ?? null,
+				cookingDate: toTimestamp(entry.cooking_date),
+			})),
+		);
+
+		// The singular states describe the first meal, which is all there is on
+		// almost every day; count and recipeNames cover the rest.
+		writer.value(`${id}.recipeId`, 'Recipe ID', 'number', 'value', first?.recipe_id ?? 0);
+		writer.value(`${id}.recipeName`, 'Recipe name', 'string', 'text', first?.recipe?.name ?? '');
+		writer.value(`${id}.yields`, 'Servings', 'number', 'value', first?.yields ?? 0);
+		writer.value(`${id}.date`, 'Cooking date', 'number', 'value.time', toTimestamp(first?.cooking_date));
 
 		if (config.enableWrite) {
-			writer.button(`${id}.remove`, 'Remove this meal from the plan');
+			// Named for what it does: one button per day cannot say which of
+			// several meals to drop, so it drops all of them.
+			writer.button(`${id}.removeAll`, 'Remove every meal planned on this day');
 		}
 	}
 }

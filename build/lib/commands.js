@@ -73,9 +73,9 @@ function parseCommand(relativeId) {
     if (rest[0] === "addRecipe") {
       return { householdId, kind: "planner.addRecipe" };
     }
-    if (rest[0] === "days" && rest[2] === "remove") {
+    if (rest[0] === "days" && rest[2] === "removeAll") {
       const day = Number(rest[1]);
-      return Number.isFinite(day) ? { householdId, kind: "planner.day.remove", day } : null;
+      return Number.isFinite(day) ? { householdId, kind: "planner.day.removeAll", day } : null;
     }
     return null;
   }
@@ -166,13 +166,16 @@ async function runCommand(context, command, value, plannedOnDay) {
       }
       return client.addPlannedRecipe(command.householdId, payload);
     }
-    case "planner.day.remove": {
+    case "planner.day.removeAll": {
       const planned = plannedOnDay(command.householdId, command.day);
-      if (!planned) {
+      if (planned.length === 0) {
         context.log.debug(`Nothing is planned for day ${command.day}, so there is nothing to remove`);
         return void 0;
       }
-      return client.removePlannedRecipe(command.householdId, planned.recipeId, planned.cookingDate);
+      for (const meal of planned) {
+        await client.removePlannedRecipe(command.householdId, meal.recipeId, meal.cookingDate);
+      }
+      return void 0;
     }
     case "recipes.scrapeUrl": {
       const url = String(value != null ? value : "").trim();

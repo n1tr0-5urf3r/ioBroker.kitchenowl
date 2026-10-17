@@ -24,7 +24,7 @@ export interface ParsedCommand {
 		| 'expenses.add'
 		| 'expenses.recalculateBalances'
 		| 'planner.addRecipe'
-		| 'planner.day.remove'
+		| 'planner.day.removeAll'
 		| 'recipes.scrapeUrl';
 	shoppingListId?: number;
 	itemId?: number;
@@ -93,9 +93,9 @@ export function parseCommand(relativeId: string): ParsedCommand | null {
 		if (rest[0] === 'addRecipe') {
 			return { householdId, kind: 'planner.addRecipe' };
 		}
-		if (rest[0] === 'days' && rest[2] === 'remove') {
+		if (rest[0] === 'days' && rest[2] === 'removeAll') {
 			const day = Number(rest[1]);
-			return Number.isFinite(day) ? { householdId, kind: 'planner.day.remove', day } : null;
+			return Number.isFinite(day) ? { householdId, kind: 'planner.day.removeAll', day } : null;
 		}
 		return null;
 	}
@@ -178,13 +178,13 @@ export function parseItemInput(value: ioBroker.StateValue): { name: string; desc
  * @param context - Client and logger
  * @param command - Parsed command
  * @param value - The value written to the state
- * @param plannedOnDay - Resolves a weekday to the meal planned on it, if any
+ * @param plannedOnDay - Resolves a weekday to every meal planned on it
  */
 export async function runCommand(
 	context: CommandContext,
 	command: ParsedCommand,
 	value: ioBroker.StateValue,
-	plannedOnDay: (householdId: number, day: number) => PlannedMeal | undefined,
+	plannedOnDay: (householdId: number, day: number) => PlannedMeal[],
 ): Promise<unknown> {
 	const { client } = context;
 
@@ -249,14 +249,20 @@ export async function runCommand(
 			return client.addPlannedRecipe(command.householdId, payload);
 		}
 
-		case 'planner.day.remove': {
+		case 'planner.day.removeAll': {
 			const planned = plannedOnDay(command.householdId, command.day!);
-			if (!planned) {
-				// Pressing remove on a day with no meal is a no-op, not a failure.
+			if (planned.length === 0) {
+				// Pressing it on a day with no meal is a no-op, not a failure.
 				context.log.debug(`Nothing is planned for day ${command.day}, so there is nothing to remove`);
 				return undefined;
 			}
-			return client.removePlannedRecipe(command.householdId, planned.recipeId, planned.cookingDate);
+
+			// A day can hold several meals and one button cannot say which, so
+			// it drops them all; its name says so.
+			for (const meal of planned) {
+				await client.removePlannedRecipe(command.householdId, meal.recipeId, meal.cookingDate);
+			}
+			return undefined;
 		}
 
 		case 'recipes.scrapeUrl': {

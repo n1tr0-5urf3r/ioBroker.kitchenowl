@@ -36,9 +36,9 @@ describe('commands', () => {
 				'expenses.recalculateBalances',
 			);
 			expect(parseCommand('households.3.planner.addRecipe')?.kind).to.equal('planner.addRecipe');
-			expect(parseCommand('households.3.planner.days.4.remove')).to.deep.equal({
+			expect(parseCommand('households.3.planner.days.4.removeAll')).to.deep.equal({
 				householdId: 3,
-				kind: 'planner.day.remove',
+				kind: 'planner.day.removeAll',
 				day: 4,
 			});
 			expect(parseCommand('households.3.recipes.scrapeUrl')?.kind).to.equal('recipes.scrapeUrl');
@@ -134,7 +134,7 @@ describe('commands', () => {
 			log: { silly() {}, debug() {}, info() {}, warn() {}, error() {}, level: 'info' },
 		});
 
-		const noPlan = (): undefined => undefined;
+		const noPlan = (): [] => [];
 
 		it('adds a shopping list item', async () => {
 			const { calls, client } = spyClient();
@@ -212,10 +212,10 @@ describe('commands', () => {
 
 		it('removes the exact planning the day refers to', async () => {
 			const { calls, client } = spyClient();
-			const command = parseCommand('households.1.planner.days.2.remove')!;
+			const command = parseCommand('households.1.planner.days.2.removeAll')!;
 
 			await runCommand(context(client), command, true, (householdId, day) =>
-				householdId === 1 && day === 2 ? { recipeId: 20, cookingDate: 1792368000000 } : undefined,
+				householdId === 1 && day === 2 ? [{ recipeId: 20, cookingDate: 1792368000000 }] : [],
 			);
 
 			// The same recipe can sit on the plan twice, so the date has to go
@@ -225,16 +225,33 @@ describe('commands', () => {
 
 		it('passes no date for a planning that has none', async () => {
 			const { calls, client } = spyClient();
-			const command = parseCommand('households.1.planner.days.2.remove')!;
+			const command = parseCommand('households.1.planner.days.2.removeAll')!;
 
-			await runCommand(context(client), command, true, () => ({ recipeId: 20, cookingDate: null }));
+			await runCommand(context(client), command, true, () => [{ recipeId: 20, cookingDate: null }]);
 
 			expect(calls).to.deep.equal([['removePlannedRecipe', 1, 20, null]]);
 		});
 
+		it('removes every meal when a day holds more than one', async () => {
+			const { calls, client } = spyClient();
+			const command = parseCommand('households.1.planner.days.2.removeAll')!;
+
+			// One button per day cannot say which meal to drop, so it drops all
+			// of them; the state is named removeAll for exactly that reason.
+			await runCommand(context(client), command, true, () => [
+				{ recipeId: 20, cookingDate: 1792368000000 },
+				{ recipeId: 21, cookingDate: 1792368000000 },
+			]);
+
+			expect(calls).to.deep.equal([
+				['removePlannedRecipe', 1, 20, 1792368000000],
+				['removePlannedRecipe', 1, 21, 1792368000000],
+			]);
+		});
+
 		it('does nothing, and does not fail, when the day is empty', async () => {
 			const { calls, client } = spyClient();
-			const command = parseCommand('households.1.planner.days.5.remove')!;
+			const command = parseCommand('households.1.planner.days.5.removeAll')!;
 
 			// A dashboard button on an empty day must not log an error every time
 			// it is pressed.

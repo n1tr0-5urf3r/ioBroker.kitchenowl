@@ -138,7 +138,8 @@ kitchenowl.<instance>
     │                           plannedDays, visibility, itemsJson
     ├── planner
     │   ├── count, json, nextRecipeName, nextRecipeId, nextCookingDate
-    │   └── days.<0-6>          date, recipeId, recipeName, yields
+    │   └── days.<0-6>          count, recipeNames, json, and date, recipeId,
+    │                           recipeName, yields for the first meal
     ├── expenses
     │   ├── count, recentJson, overviewJson, currentPeriodTotal
     │   ├── newestName, newestAmount, newestDate, newestPaidBy
@@ -173,7 +174,7 @@ re-reads the affected household.
 | `households.<id>.expenses.add` | JSON | Books an expense. `name`, `amount`, `paid_by` and `paid_for` are all required, e.g. `{"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}, {"id": 2}]}` |
 | `households.<id>.expenses.recalculateBalances` | button | Asks the server to recompute member balances |
 | `households.<id>.planner.addRecipe` | JSON | Plans a recipe, e.g. `{"recipe_id": 20, "cooking_date": 1700000000000}` |
-| `households.<id>.planner.days.<0-6>.remove` | button | Removes the meal planned on that weekday |
+| `households.<id>.planner.days.<0-6>.removeAll` | button | Removes **every** meal planned on that weekday. A day can hold more than one, and a single button cannot say which. |
 | `households.<id>.recipes.scrapeUrl` | string | Imports a recipe from a URL; the scraped recipe lands in `recipes.scrapeResult` as JSON |
 
 ### Messages
@@ -210,6 +211,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 -->
 ### **WORK IN PROGRESS**
 
+- (n1tr0-5urf3r) A weekday that holds more than one meal shows all of them: `count`, `recipeNames` and `json` next to the existing states for the first meal. The per-day button is now `removeAll` and clears every meal on that day, because one button cannot say which of several to drop
 - (n1tr0-5urf3r) Removing a planned meal and deleting an expense send a request body, without which the server answered with an error. Removing a planned meal also names the date it refers to, so the right one goes when a recipe is on the plan more than once, and pressing remove on an empty day does nothing instead of logging an error
 - (n1tr0-5urf3r) Clearing a shopping list names the items to remove, which is what the endpoint expects; it answered with an error before
 - (n1tr0-5urf3r) Adding an expense documents and checks the fields the server actually requires: `paid_by` and `paid_for` are objects, and there is no `paid_by_id`
