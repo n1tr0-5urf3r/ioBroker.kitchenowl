@@ -6,6 +6,13 @@ export interface CommandContext {
 	log: ioBroker.Logger;
 }
 
+/** The meal on one weekday, as the last poll saw it. */
+export interface PlannedMeal {
+	recipeId: number;
+	/** Which of possibly several plannings of this recipe the button refers to. */
+	cookingDate: number | null;
+}
+
 /** A parsed writable state id, e.g. `households.1.shoppingLists.2.items.3.remove`. */
 export interface ParsedCommand {
 	householdId: number;
@@ -100,6 +107,19 @@ export function parseCommand(relativeId: string): ParsedCommand | null {
 	return null;
 }
 
+/** A worked example, shown in the state name and in the error when input falls short. */
+export const EXPENSE_EXAMPLE =
+	'{"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}, {"id": 2}]}';
+
+/**
+ * Whether a value is the `{"id": n}` object the expense endpoints expect.
+ *
+ * @param value - Candidate from the command payload
+ */
+function isUserRef(value: unknown): boolean {
+	return typeof value === 'object' && value !== null && typeof (value as { id?: unknown }).id === 'number';
+}
+
 /**
  * Parses a JSON command payload, raising a readable error for bad input.
  *
@@ -158,13 +178,13 @@ export function parseItemInput(value: ioBroker.StateValue): { name: string; desc
  * @param context - Client and logger
  * @param command - Parsed command
  * @param value - The value written to the state
- * @param recipeIdForDay - Resolves a weekday to the recipe planned on it
+ * @param plannedOnDay - Resolves a weekday to the meal planned on it, if any
  */
 export async function runCommand(
 	context: CommandContext,
 	command: ParsedCommand,
 	value: ioBroker.StateValue,
-	recipeIdForDay: (householdId: number, day: number) => number | undefined,
+	plannedOnDay: (householdId: number, day: number) => PlannedMeal | undefined,
 ): Promise<unknown> {
 	const { client } = context;
 
@@ -192,8 +212,28 @@ export async function runCommand(
 
 		case 'expenses.add': {
 			const payload = parseJsonPayload(value, 'Adding an expense');
-			if (typeof payload.name !== 'string' || typeof payload.amount !== 'number') {
-				throw new Error('Adding an expense needs at least a "name" string and an "amount" number');
+
+			// The server rejects anything short of these four, and a user id alone
+			// is not enough: both sides of the booking are nested objects.
+			const missing: string[] = [];
+			if (typeof payload.name !== 'string' || payload.name.trim() === '') {
+				missing.push('"name" (string)');
+			}
+			if (typeof payload.amount !== 'number') {
+				missing.push('"amount" (number)');
+			}
+			if (!isUserRef(payload.paid_by)) {
+				missing.push('"paid_by" ({"id": <user id>})');
+			}
+			if (
+				!Array.isArray(payload.paid_for) ||
+				payload.paid_for.length === 0 ||
+				!payload.paid_for.every(isUserRef)
+			) {
+				missing.push('"paid_for" (a non-empty list of {"id": <user id>})');
+			}
+			if (missing.length > 0) {
+				throw new Error(`Adding an expense needs ${missing.join(', ')}. For example: ${EXPENSE_EXAMPLE}`);
 			}
 			return client.addExpense(command.householdId, payload);
 		}
@@ -210,11 +250,13 @@ export async function runCommand(
 		}
 
 		case 'planner.day.remove': {
-			const recipeId = recipeIdForDay(command.householdId, command.day!);
-			if (recipeId === undefined) {
-				throw new Error(`No recipe is planned for day ${command.day}`);
+			const planned = plannedOnDay(command.householdId, command.day!);
+			if (!planned) {
+				// Pressing remove on a day with no meal is a no-op, not a failure.
+				context.log.debug(`Nothing is planned for day ${command.day}, so there is nothing to remove`);
+				return undefined;
 			}
-			return client.removePlannedRecipe(command.householdId, recipeId);
+			return client.removePlannedRecipe(command.householdId, planned.recipeId, planned.cookingDate);
 		}
 
 		case 'recipes.scrapeUrl': {

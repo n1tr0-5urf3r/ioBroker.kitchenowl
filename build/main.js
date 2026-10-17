@@ -282,7 +282,8 @@ class Kitchenowl extends utils.Adapter {
         state.val,
         (householdId, day) => {
           var _a, _b;
-          return (_b = (_a = this.plannerCache.get(householdId)) == null ? void 0 : _a.find((entry) => entry.day === day)) == null ? void 0 : _b.recipe_id;
+          const entry = (_a = this.plannerCache.get(householdId)) == null ? void 0 : _a.find((candidate) => candidate.day === day);
+          return entry ? { recipeId: entry.recipe_id, cookingDate: (_b = entry.cooking_date) != null ? _b : null } : void 0;
         }
       );
       this.log.info(`Command ${command.kind} succeeded for household ${command.householdId}`);

@@ -174,6 +174,15 @@ export class KitchenOwlClient {
 	}
 
 	/**
+	 * The items currently on one shopping list.
+	 *
+	 * @param shoppingListId - Shopping list to read
+	 */
+	public shoppingListItems(shoppingListId: number): Promise<ShoppingListItem[]> {
+		return this.request<ShoppingListItem[]>('GET', `/api/shoppinglist/${shoppingListId}/items`);
+	}
+
+	/**
 	 * Items the server suggests adding, based on past purchases.
 	 *
 	 * @param shoppingListId - Shopping list to act on
@@ -331,8 +340,18 @@ export class KitchenOwlClient {
 	 *
 	 * @param shoppingListId - Shopping list to act on
 	 */
-	public clearShoppingList(shoppingListId: number): Promise<unknown> {
-		return this.request('DELETE', `/api/shoppinglist/${shoppingListId}/items`);
+	public async clearShoppingList(shoppingListId: number): Promise<unknown> {
+		// The endpoint removes the items it is handed rather than emptying the
+		// list, and its handler reads that list without checking it is there, so
+		// calling it with no body answers 500.
+		const items = await this.shoppingListItems(shoppingListId);
+		if (items.length === 0) {
+			return undefined;
+		}
+
+		return this.request('DELETE', `/api/shoppinglist/${shoppingListId}/items`, {
+			body: { items: items.map(item => ({ item_id: item.id })) },
+		});
 	}
 
 	/**
@@ -349,18 +368,6 @@ export class KitchenOwlClient {
 	): Promise<unknown> {
 		return this.request('POST', `/api/shoppinglist/${shoppingListId}/item/${itemId}`, {
 			body: { description },
-		});
-	}
-
-	/**
-	 * Puts a recipe's ingredients onto a shopping list.
-	 *
-	 * @param shoppingListId - Shopping list to act on
-	 * @param items - Ingredient payloads accepted by the API
-	 */
-	public addRecipeItemsToShoppingList(shoppingListId: number, items: unknown[]): Promise<unknown> {
-		return this.request('POST', `/api/shoppinglist/${shoppingListId}/recipeitems`, {
-			body: { items },
 		});
 	}
 
@@ -407,9 +414,14 @@ export class KitchenOwlClient {
 	 *
 	 * @param householdId - Household to act on
 	 * @param recipeId - Recipe to act on
+	 * @param cookingDate
 	 */
-	public removePlannedRecipe(householdId: number, recipeId: number): Promise<unknown> {
-		return this.request('DELETE', `/api/household/${householdId}/planner/recipe/${recipeId}`);
+	public removePlannedRecipe(householdId: number, recipeId: number, cookingDate?: number | null): Promise<unknown> {
+		// A recipe can sit on the plan more than once, so the date decides which
+		// entry goes. Without it the server looks for an unscheduled entry
+		// instead, which is a different thing entirely.
+		const query = typeof cookingDate === 'number' ? `?cooking_date=${cookingDate}` : '';
+		return this.request('DELETE', `/api/household/${householdId}/planner/recipe/${recipeId}${query}`);
 	}
 
 	/**

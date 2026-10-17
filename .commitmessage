@@ -1,0 +1,18 @@
+chore: release v0.0.4
+
+- (n1tr0-5urf3r) Removed the id states whose value was already the name of the object they sat in
+- (n1tr0-5urf3r) A date that is not set now reads as empty instead of 1 January 1970
+- (n1tr0-5urf3r) Expenses name the person who paid instead of exposing a numeric user id
+- (n1tr0-5urf3r) Expense category colours are CSS values, and recipe visibility shows a label
+- (n1tr0-5urf3r) Existing objects are kept in line with the adapter's own definitions, so enabling write access makes the states that are already there writable rather than only the ones created afterwards
+- (n1tr0-5urf3r) A shopping list, recipe, member or category renamed in KitchenOwl is renamed in the object tree as well
+- (n1tr0-5urf3r) Names that come from KitchenOwl are no longer run through the German name table, so a list called "Items" keeps its name
+- (n1tr0-5urf3r) The result of a recipe import reaches `recipes.scrapeResult` instead of being thrown away and the state wiped on the next poll
+- (n1tr0-5urf3r) The next planned meal skips days that are already over
+- (n1tr0-5urf3r) One household that cannot be read no longer costs every other household its update
+- (n1tr0-5urf3r) A refresh requested while a poll is running is carried out afterwards instead of being dropped, and the refresh button is acknowledged
+- (n1tr0-5urf3r) Shopping list items can be added with a description by writing JSON instead of a plain name
+- (n1tr0-5urf3r) A server URL entered with a trailing `/api` is accepted, a request that times out says so instead of reporting an aborted operation, and a rate limited request is retried
+- (n1tr0-5urf3r) Two members whose usernames differ only in punctuation no longer share one branch
+- (n1tr0-5urf3r) `getHouseholds` over the message box keeps the configured TLS setting and no longer leaks its connection when it fails
+- (n1tr0-5urf3r) The object database is only read back when a definition actually changed, which takes around a thousand lookups per household out of every poll

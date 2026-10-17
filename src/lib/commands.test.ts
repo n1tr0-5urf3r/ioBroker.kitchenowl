@@ -168,17 +168,37 @@ describe('commands', () => {
 			expect(calls).to.be.empty;
 		});
 
-		it('requires the mandatory fields when adding an expense', async () => {
+		it('requires every field the expense endpoint insists on', async () => {
 			const { calls, client } = spyClient();
 			const command = parseCommand('households.1.expenses.add')!;
 
-			await expect(runCommand(context(client), command, '{"name":"Shop"}', noPlan)).to.be.rejectedWith(
-				'"amount" number',
-			);
+			// The server needs both sides of the booking as nested objects; a name
+			// and an amount alone come back as a validation error.
+			await expect(
+				runCommand(context(client), command, '{"name":"Shop","amount":9.5}', noPlan),
+			).to.be.rejectedWith('"paid_by"');
 			expect(calls).to.be.empty;
 
-			await runCommand(context(client), command, '{"name":"Shop","amount":9.5}', noPlan);
-			expect(calls).to.deep.equal([['addExpense', 1, { name: 'Shop', amount: 9.5 }]]);
+			await expect(
+				runCommand(context(client), command, '{"name":"Shop","amount":9.5,"paid_by":{"id":1}}', noPlan),
+			).to.be.rejectedWith('"paid_for"');
+
+			// A bare user id is the mistake the old example invited.
+			await expect(
+				runCommand(context(client), command, '{"name":"Shop","amount":9.5,"paid_by":1,"paid_for":[1]}', noPlan),
+			).to.be.rejectedWith('"paid_by"');
+
+			expect(calls).to.be.empty;
+		});
+
+		it('passes a complete expense through untouched', async () => {
+			const { calls, client } = spyClient();
+			const command = parseCommand('households.1.expenses.add')!;
+			const payload = { name: 'Shop', amount: 9.5, paid_by: { id: 1 }, paid_for: [{ id: 1 }, { id: 2 }] };
+
+			await runCommand(context(client), command, JSON.stringify(payload), noPlan);
+
+			expect(calls).to.deep.equal([['addExpense', 1, payload]]);
 		});
 
 		it('requires a recipe id when planning a meal', async () => {
@@ -190,24 +210,37 @@ describe('commands', () => {
 			);
 		});
 
-		it('resolves a planner day to the recipe currently planned on it', async () => {
+		it('removes the exact planning the day refers to', async () => {
 			const { calls, client } = spyClient();
 			const command = parseCommand('households.1.planner.days.2.remove')!;
 
 			await runCommand(context(client), command, true, (householdId, day) =>
-				householdId === 1 && day === 2 ? 20 : undefined,
+				householdId === 1 && day === 2 ? { recipeId: 20, cookingDate: 1792368000000 } : undefined,
 			);
 
-			expect(calls).to.deep.equal([['removePlannedRecipe', 1, 20]]);
+			// The same recipe can sit on the plan twice, so the date has to go
+			// along or the server removes the wrong entry, or none at all.
+			expect(calls).to.deep.equal([['removePlannedRecipe', 1, 20, 1792368000000]]);
 		});
 
-		it('explains itself when nothing is planned on the chosen day', async () => {
-			const { client } = spyClient();
+		it('passes no date for a planning that has none', async () => {
+			const { calls, client } = spyClient();
+			const command = parseCommand('households.1.planner.days.2.remove')!;
+
+			await runCommand(context(client), command, true, () => ({ recipeId: 20, cookingDate: null }));
+
+			expect(calls).to.deep.equal([['removePlannedRecipe', 1, 20, null]]);
+		});
+
+		it('does nothing, and does not fail, when the day is empty', async () => {
+			const { calls, client } = spyClient();
 			const command = parseCommand('households.1.planner.days.5.remove')!;
 
-			await expect(runCommand(context(client), command, true, noPlan)).to.be.rejectedWith(
-				'No recipe is planned for day 5',
-			);
+			// A dashboard button on an empty day must not log an error every time
+			// it is pressed.
+			await runCommand(context(client), command, true, noPlan);
+
+			expect(calls).to.be.empty;
 		});
 
 		it('only imports recipes from http URLs', async () => {

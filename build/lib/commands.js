@@ -18,6 +18,7 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var commands_exports = {};
 __export(commands_exports, {
+  EXPENSE_EXAMPLE: () => EXPENSE_EXAMPLE,
   parseCommand: () => parseCommand,
   parseItemInput: () => parseItemInput,
   parseJsonPayload: () => parseJsonPayload,
@@ -83,6 +84,10 @@ function parseCommand(relativeId) {
   }
   return null;
 }
+const EXPENSE_EXAMPLE = '{"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}, {"id": 2}]}';
+function isUserRef(value) {
+  return typeof value === "object" && value !== null && typeof value.id === "number";
+}
 function parseJsonPayload(value, what) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new Error(`${what} expects a JSON object as a string`);
@@ -112,7 +117,7 @@ function parseItemInput(value) {
     description: typeof payload.description === "string" ? payload.description : void 0
   };
 }
-async function runCommand(context, command, value, recipeIdForDay) {
+async function runCommand(context, command, value, plannedOnDay) {
   const { client } = context;
   switch (command.kind) {
     case "shoppingList.addItemByName": {
@@ -134,8 +139,21 @@ async function runCommand(context, command, value, recipeIdForDay) {
       );
     case "expenses.add": {
       const payload = parseJsonPayload(value, "Adding an expense");
-      if (typeof payload.name !== "string" || typeof payload.amount !== "number") {
-        throw new Error('Adding an expense needs at least a "name" string and an "amount" number');
+      const missing = [];
+      if (typeof payload.name !== "string" || payload.name.trim() === "") {
+        missing.push('"name" (string)');
+      }
+      if (typeof payload.amount !== "number") {
+        missing.push('"amount" (number)');
+      }
+      if (!isUserRef(payload.paid_by)) {
+        missing.push('"paid_by" ({"id": <user id>})');
+      }
+      if (!Array.isArray(payload.paid_for) || payload.paid_for.length === 0 || !payload.paid_for.every(isUserRef)) {
+        missing.push('"paid_for" (a non-empty list of {"id": <user id>})');
+      }
+      if (missing.length > 0) {
+        throw new Error(`Adding an expense needs ${missing.join(", ")}. For example: ${EXPENSE_EXAMPLE}`);
       }
       return client.addExpense(command.householdId, payload);
     }
@@ -149,11 +167,12 @@ async function runCommand(context, command, value, recipeIdForDay) {
       return client.addPlannedRecipe(command.householdId, payload);
     }
     case "planner.day.remove": {
-      const recipeId = recipeIdForDay(command.householdId, command.day);
-      if (recipeId === void 0) {
-        throw new Error(`No recipe is planned for day ${command.day}`);
+      const planned = plannedOnDay(command.householdId, command.day);
+      if (!planned) {
+        context.log.debug(`Nothing is planned for day ${command.day}, so there is nothing to remove`);
+        return void 0;
       }
-      return client.removePlannedRecipe(command.householdId, recipeId);
+      return client.removePlannedRecipe(command.householdId, planned.recipeId, planned.cookingDate);
     }
     case "recipes.scrapeUrl": {
       const url = String(value != null ? value : "").trim();
@@ -166,6 +185,7 @@ async function runCommand(context, command, value, recipeIdForDay) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  EXPENSE_EXAMPLE,
   parseCommand,
   parseItemInput,
   parseJsonPayload,

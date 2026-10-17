@@ -313,6 +313,21 @@ describe('KitchenOwlClient', () => {
 			expect(JSON.parse(requests[0].body)).to.deep.equal({ item_id: 10 });
 		});
 
+		it('names the planning to remove by its cooking date', async () => {
+			respondJson({});
+			await client().removePlannedRecipe(1, 3, 1792368000000);
+
+			expect(requests[0].method).to.equal('DELETE');
+			expect(requests[0].url).to.equal('/api/household/1/planner/recipe/3?cooking_date=1792368000000');
+		});
+
+		it('omits the cooking date when the planning has none', async () => {
+			respondJson({});
+			await client().removePlannedRecipe(1, 3);
+
+			expect(requests[0].url).to.equal('/api/household/1/planner/recipe/3');
+		});
+
 		it('escapes the URL when importing a recipe', async () => {
 			respondJson({});
 			await client().scrapeRecipe(1, 'https://example.invalid/a b?x=1');
@@ -328,9 +343,38 @@ describe('KitchenOwlClient', () => {
 				res.end();
 			};
 
-			const result = await client().clearShoppingList(2);
+			const result = await client().removeShoppingListItem(2, 10);
 
 			expect(result).to.equal(undefined);
+		});
+
+		it('clears a list by naming every item currently on it', async () => {
+			// The endpoint deletes the items it is handed; with no body its handler
+			// reads a missing key and answers 500.
+			handler = (req, res) => {
+				res.writeHead(200, { 'Content-Type': 'application/json' });
+				res.end(
+					req.method === 'GET'
+						? '[{"id":10,"name":"Bread","household_id":1},{"id":11,"name":"Milk","household_id":1}]'
+						: '{}',
+				);
+			};
+
+			await client().clearShoppingList(2);
+
+			expect(requests.map(r => `${r.method} ${r.url}`)).to.deep.equal([
+				'GET /api/shoppinglist/2/items',
+				'DELETE /api/shoppinglist/2/items',
+			]);
+			expect(JSON.parse(requests[1].body)).to.deep.equal({ items: [{ item_id: 10 }, { item_id: 11 }] });
+		});
+
+		it('does not call the delete at all for a list that is already empty', async () => {
+			respondJson([]);
+
+			await client().clearShoppingList(2);
+
+			expect(requests.map(r => r.method)).to.deep.equal(['GET']);
 		});
 	});
 });

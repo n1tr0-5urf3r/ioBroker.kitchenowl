@@ -25,7 +25,7 @@ const GERMAN = {
   Colour: "Farbe",
   "Newest expense paid by": "Neueste Ausgabe bezahlt von",
   "Adapter commands": "Adapterbefehle",
-  'Add an expense, as JSON: {"name": "Groceries", "amount": 12.5, "paid_by_id": 1}': 'Ausgabe anlegen, als JSON: {"name": "Einkauf", "amount": 12.5, "paid_by_id": 1}',
+  'Add an expense, as JSON: {"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}]}': 'Ausgabe anlegen, als JSON: {"name": "Einkauf", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}]}',
   'Add an item by name, or as JSON: {"name": "Milk", "description": "2 L"}': 'Artikel hinzuf\xFCgen, \xFCber den Namen oder als JSON: {"name": "Milch", "description": "2 l"}',
   "All item categories": "Alle Artikelkategorien",
   "All items on the list": "Alle Artikel auf der Liste",

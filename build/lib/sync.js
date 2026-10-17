@@ -346,7 +346,7 @@ function syncExpenses(writer, base, expenses, categories, overview, config, memb
   if (config.enableWrite) {
     writer.state({
       id: `${root}.add`,
-      name: 'Add an expense, as JSON: {"name": "Groceries", "amount": 12.5, "paid_by_id": 1}',
+      name: 'Add an expense, as JSON: {"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}]}',
       type: "string",
       role: "json",
       read: false,

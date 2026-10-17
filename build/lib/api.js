@@ -118,6 +118,14 @@ class KitchenOwlClient {
     );
   }
   /**
+   * The items currently on one shopping list.
+   *
+   * @param shoppingListId - Shopping list to read
+   */
+  shoppingListItems(shoppingListId) {
+    return this.request("GET", `/api/shoppinglist/${shoppingListId}/items`);
+  }
+  /**
    * Items the server suggests adding, based on past purchases.
    *
    * @param shoppingListId - Shopping list to act on
@@ -252,8 +260,14 @@ class KitchenOwlClient {
    *
    * @param shoppingListId - Shopping list to act on
    */
-  clearShoppingList(shoppingListId) {
-    return this.request("DELETE", `/api/shoppinglist/${shoppingListId}/items`);
+  async clearShoppingList(shoppingListId) {
+    const items = await this.shoppingListItems(shoppingListId);
+    if (items.length === 0) {
+      return void 0;
+    }
+    return this.request("DELETE", `/api/shoppinglist/${shoppingListId}/items`, {
+      body: { items: items.map((item) => ({ item_id: item.id })) }
+    });
   }
   /**
    * Changes an item's description on a list, typically the amount.
@@ -265,17 +279,6 @@ class KitchenOwlClient {
   updateShoppingListItemDescription(shoppingListId, itemId, description) {
     return this.request("POST", `/api/shoppinglist/${shoppingListId}/item/${itemId}`, {
       body: { description }
-    });
-  }
-  /**
-   * Puts a recipe's ingredients onto a shopping list.
-   *
-   * @param shoppingListId - Shopping list to act on
-   * @param items - Ingredient payloads accepted by the API
-   */
-  addRecipeItemsToShoppingList(shoppingListId, items) {
-    return this.request("POST", `/api/shoppinglist/${shoppingListId}/recipeitems`, {
-      body: { items }
     });
   }
   /**
@@ -317,9 +320,11 @@ class KitchenOwlClient {
    *
    * @param householdId - Household to act on
    * @param recipeId - Recipe to act on
+   * @param cookingDate
    */
-  removePlannedRecipe(householdId, recipeId) {
-    return this.request("DELETE", `/api/household/${householdId}/planner/recipe/${recipeId}`);
+  removePlannedRecipe(householdId, recipeId, cookingDate) {
+    const query = typeof cookingDate === "number" ? `?cooking_date=${cookingDate}` : "";
+    return this.request("DELETE", `/api/household/${householdId}/planner/recipe/${recipeId}${query}`);
   }
   /**
    * Imports a recipe from a public URL.
