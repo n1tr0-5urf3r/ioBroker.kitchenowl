@@ -236,7 +236,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 	The heading has to be present for a release to run at all; without it the
 	script stops with "The changelog placeholder is missing from README.md!".
 -->
-### **WORK IN PROGRESS**
+### 0.0.5 (2026-10-17)
 
 - (n1tr0-5urf3r) Photos are downloaded into the adapter's own file storage and `photoUrl` points at that copy, so a visualisation can show them. The address on the KitchenOwl server needs the API token, which a browser does not send, so loading one directly answered `Request unauthorized`
 - (n1tr0-5urf3r) Items report an emoji instead of KitchenOwl's icon key. The key named artwork that no address serves and whose licence forbids shipping a copy, so a visualisation showed a broken image and the word `honey`. All 403 upstream keys are covered, and an item without one falls back to the emoji on its category, which is taken whole: a skin tone, a flag, a keycap or a sequence such as 👩🏽‍🍳 arrives as the user wrote it rather than cut down to its first character
