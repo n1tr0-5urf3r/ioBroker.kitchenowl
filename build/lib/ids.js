@@ -34,8 +34,9 @@ function toId(value, fallback = "unknown") {
 function memberId(member) {
   return toId(member.username || member.name || "", `user_${member.id}`);
 }
-function memberIds(members) {
+function memberIds(members, reserved = []) {
   var _a;
+  const taken = new Set(reserved);
   const occurrences = /* @__PURE__ */ new Map();
   for (const member of members) {
     const segment = memberId(member);
@@ -44,7 +45,8 @@ function memberIds(members) {
   const segments = /* @__PURE__ */ new Map();
   for (const member of members) {
     const segment = memberId(member);
-    segments.set(member.id, occurrences.get(segment) === 1 ? segment : `${segment}_${member.id}`);
+    const unique = occurrences.get(segment) === 1 && !taken.has(segment);
+    segments.set(member.id, unique ? segment : `${segment}_${member.id}`);
   }
   return segments;
 }

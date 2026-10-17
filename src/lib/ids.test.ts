@@ -89,4 +89,18 @@ describe('memberIds', () => {
 
 		expect(segments.get(3)).to.equal('user_3');
 	});
+
+	it('steps aside for a state the branch writes itself', () => {
+		// A member called "count" would otherwise land on members.count, the
+		// state holding how many members there are.
+		const segments = memberIds([{ id: 5, username: 'count' }], ['count', 'balancesJson']);
+
+		expect(segments.get(5)).to.equal('count_5');
+	});
+
+	it('leaves a name alone when it is not one of the reserved ids', () => {
+		const segments = memberIds([{ id: 5, username: 'counter' }], ['count']);
+
+		expect(segments.get(5)).to.equal('counter');
+	});
 });

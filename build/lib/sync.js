@@ -91,6 +91,7 @@ function syncMembers(writer, client, base, household) {
   var _a, _b, _c;
   const members = (_a = household.member) != null ? _a : [];
   const root = `${base}.members`;
+  const ownStates = ["count", "balancesJson"];
   writer.channel(root, "Household members");
   writer.value(`${root}.count`, "Number of members", "number", "value", members.length);
   writer.json(
@@ -101,7 +102,7 @@ function syncMembers(writer, client, base, household) {
       return [member.username, (0, import_ids.round2)((_a2 = member.expense_balance) != null ? _a2 : 0)];
     }))
   );
-  const segments = (0, import_ids.memberIds)(members);
+  const segments = (0, import_ids.memberIds)(members, ownStates);
   for (const member of members) {
     const id = `${root}.${segments.get(member.id)}`;
     writer.serverChannel(id, member.name);

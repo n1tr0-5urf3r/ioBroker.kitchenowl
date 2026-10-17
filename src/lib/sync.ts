@@ -162,6 +162,8 @@ export function syncHousehold(
 export function syncMembers(writer: ObjectWriter, client: KitchenOwlClient, base: string, household: Household): void {
 	const members = household.member ?? [];
 	const root = `${base}.members`;
+	// Ids this branch uses itself, which no member channel may take over.
+	const ownStates = ['count', 'balancesJson'];
 
 	writer.channel(root, 'Household members');
 	writer.value(`${root}.count`, 'Number of members', 'number', 'value', members.length);
@@ -171,7 +173,7 @@ export function syncMembers(writer: ObjectWriter, client: KitchenOwlClient, base
 		Object.fromEntries(members.map(member => [member.username, round2(member.expense_balance ?? 0)])),
 	);
 
-	const segments = memberIds(members);
+	const segments = memberIds(members, ownStates);
 
 	for (const member of members) {
 		const id = `${root}.${segments.get(member.id)}`;

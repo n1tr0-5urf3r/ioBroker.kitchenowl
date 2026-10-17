@@ -55,9 +55,16 @@ export function memberId(member: IdentifiableMember): string {
  * quietly overwriting the first. Where that happens the user id is appended to
  * every member of the group, so the names stay readable for everyone else.
  *
+ * A segment can also collide with a state the branch writes itself: a member
+ * called "count" would land on the very id holding the number of members, and
+ * the two would then fight over one object. Those names are handled the same
+ * way, by appending the user id.
+ *
  * @param members - Members of one household
+ * @param reserved - Ids the branch already uses for states of its own
  */
-export function memberIds(members: IdentifiableMember[]): Map<number, string> {
+export function memberIds(members: IdentifiableMember[], reserved: readonly string[] = []): Map<number, string> {
+	const taken = new Set(reserved);
 	const occurrences = new Map<string, number>();
 	for (const member of members) {
 		const segment = memberId(member);
@@ -67,7 +74,8 @@ export function memberIds(members: IdentifiableMember[]): Map<number, string> {
 	const segments = new Map<number, string>();
 	for (const member of members) {
 		const segment = memberId(member);
-		segments.set(member.id, occurrences.get(segment) === 1 ? segment : `${segment}_${member.id}`);
+		const unique = occurrences.get(segment) === 1 && !taken.has(segment);
+		segments.set(member.id, unique ? segment : `${segment}_${member.id}`);
 	}
 	return segments;
 }
