@@ -149,6 +149,13 @@ kitchenowl.<instance>
         └── itemsJson, itemCount, categoriesJson, categoryCount, tagsJson, tagCount
 ```
 
+**About `icon`:** this is KitchenOwl's own icon *key*, such as `ketchup` or `apple` — not an image, a URL or an
+emoji. The icons are compiled into the KitchenOwl apps and the server does not serve them at any address, so a
+visualization cannot load them from your instance. They are also Icons8 artwork that may not be redistributed, so
+the adapter cannot ship them either. To show pictures, map the key onto an icon set of your own. Roughly a third of
+items carry no icon at all. The `category` state is often the easier win: category names in KitchenOwl usually start
+with an emoji, which renders anywhere.
+
 Weekday `0` is Monday. Timestamps are epoch milliseconds, matching what the KitchenOwl API returns. A date that is
 not set reads as empty rather than as epoch 0. Expense balances are rounded to two decimals; the API returns them as
 raw floats.
