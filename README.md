@@ -208,11 +208,14 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
-### 0.0.4 (2026-10-17)
+### **WORK IN PROGRESS**
 
 - (n1tr0-5urf3r) Removing a planned meal names the date it refers to, so the right one goes when a recipe is on the plan more than once, and pressing remove on an empty day does nothing instead of logging an error
 - (n1tr0-5urf3r) Clearing a shopping list names the items to remove, which is what the endpoint expects; it answered with an error before
 - (n1tr0-5urf3r) Adding an expense documents and checks the fields the server actually requires: `paid_by` and `paid_for` are objects, and there is no `paid_by_id`
+
+### 0.0.4 (2026-10-17)
+
 - (n1tr0-5urf3r) Removed the id states whose value was already the name of the object they sat in
 - (n1tr0-5urf3r) A date that is not set now reads as empty instead of 1 January 1970
 - (n1tr0-5urf3r) Expenses name the person who paid instead of exposing a numeric user id
