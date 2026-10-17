@@ -28,6 +28,7 @@ __export(sync_exports, {
   syncShoppingLists: () => syncShoppingLists
 });
 module.exports = __toCommonJS(sync_exports);
+var import_icons = require("./icons");
 var import_ids = require("./ids");
 var import_types = require("./types");
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -46,7 +47,7 @@ function slimItem(item) {
     id: item.id,
     name: item.name,
     category: (_b = (_a = item.category) == null ? void 0 : _a.name) != null ? _b : null,
-    icon: (_c = item.icon) != null ? _c : null
+    icon: (0, import_icons.itemEmoji)(item.icon, (_c = item.category) == null ? void 0 : _c.name)
   };
   if (item.description !== void 0) {
     slim.description = item.description;
@@ -157,7 +158,7 @@ function syncShoppingLists(writer, base, lists, config) {
       writer.serverChannel(itemId, item.name);
       writer.value(`${itemId}.name`, "Name", "string", "text", item.name);
       writer.value(`${itemId}.category`, "Category", "string", "text", (_d = (_c = item.category) == null ? void 0 : _c.name) != null ? _d : "");
-      writer.value(`${itemId}.icon`, "Icon key", "string", "text", (_e = item.icon) != null ? _e : "");
+      writer.value(`${itemId}.icon`, "Icon", "string", "text", (0, import_icons.itemEmoji)(item.icon, (_e = item.category) == null ? void 0 : _e.name));
       if (config.enableWrite) {
         writer.state({
           id: `${itemId}.description`,

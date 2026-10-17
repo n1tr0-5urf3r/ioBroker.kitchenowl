@@ -153,12 +153,11 @@ kitchenowl.<instance>
 with an `<img>` tag. Loading one straight from a visualization answers `Request unauthorized`. Fetch it server side,
 in a script that can set the `Authorization` header, or cache a copy somewhere your visualization can read.
 
-**About `icon`:** this is KitchenOwl's own icon *key*, such as `ketchup` or `apple` — not an image, a URL or an
-emoji. The icons are compiled into the KitchenOwl apps and the server does not serve them at any address, so a
-visualization cannot load them from your instance. They are also Icons8 artwork that may not be redistributed, so
-the adapter cannot ship them either. To show pictures, map the key onto an icon set of your own. Roughly a third of
-items carry no icon at all. The `category` state is often the easier win: category names in KitchenOwl usually start
-with an emoji, which renders anywhere.
+**About `icon`:** KitchenOwl's API hands out an icon *key* such as `honey`, and the artwork behind it is compiled
+into the KitchenOwl apps: no address serves it, and its licence forbids shipping a copy. The adapter therefore
+publishes an **emoji** instead, so the state renders anywhere without any mapping on your side. Items whose key is
+unknown fall back to the emoji on their category, which KitchenOwl users set themselves; items with neither report
+an empty string rather than a placeholder that would show as a broken image.
 
 Weekday `0` is Monday. Timestamps are epoch milliseconds, matching what the KitchenOwl API returns. A date that is
 not set reads as empty rather than as epoch 0. Expense balances are rounded to two decimals; the API returns them as

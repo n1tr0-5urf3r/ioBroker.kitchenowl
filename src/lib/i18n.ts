@@ -6,6 +6,7 @@
  * recipe title, are passed through untranslated.
  */
 const GERMAN: Record<string, string> = {
+	Icon: 'Symbol',
 	'Remove every meal planned on this day': 'Alle an diesem Tag geplanten Mahlzeiten entfernen',
 	'Meals planned on this day': 'An diesem Tag geplante Mahlzeiten',
 	'Recipe names': 'Rezeptnamen',
@@ -42,7 +43,6 @@ const GERMAN: Record<string, string> = {
 	'Household members': 'Haushaltsmitglieder',
 	'Household owner': 'Haushaltsinhaber',
 	Households: 'Haushalte',
-	'Icon key': 'Symbolschlüssel',
 	'Import a recipe from a URL': 'Rezept von einer URL importieren',
 	Information: 'Information',
 	Ingredients: 'Zutaten',

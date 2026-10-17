@@ -1,4 +1,5 @@
 import type { KitchenOwlClient } from './api';
+import { itemEmoji } from './icons';
 import { memberIds, round2, toId, toTimestamp } from './ids';
 import type { ObjectWriter } from './objects';
 import {
@@ -65,7 +66,8 @@ export interface SlimItem {
 	/** Only present on recipe ingredients. */
 	optional?: boolean;
 	category: string | null;
-	icon: string | null;
+	/** An emoji, not KitchenOwl's icon key: the key names artwork nothing serves. */
+	icon: string;
 }
 
 /**
@@ -94,7 +96,7 @@ function slimItem(item: Item & { description?: string; optional?: boolean }): Sl
 		id: item.id,
 		name: item.name,
 		category: item.category?.name ?? null,
-		icon: item.icon ?? null,
+		icon: itemEmoji(item.icon, item.category?.name),
 	};
 	if (item.description !== undefined) {
 		slim.description = item.description;
@@ -242,7 +244,7 @@ export function syncShoppingLists(writer: ObjectWriter, base: string, lists: Sho
 
 			writer.value(`${itemId}.name`, 'Name', 'string', 'text', item.name);
 			writer.value(`${itemId}.category`, 'Category', 'string', 'text', item.category?.name ?? '');
-			writer.value(`${itemId}.icon`, 'Icon key', 'string', 'text', item.icon ?? '');
+			writer.value(`${itemId}.icon`, 'Icon', 'string', 'text', itemEmoji(item.icon, item.category?.name));
 
 			if (config.enableWrite) {
 				writer.state({

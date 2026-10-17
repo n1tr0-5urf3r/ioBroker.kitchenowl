@@ -470,7 +470,8 @@ describe('sync', () => {
 				name: 'Bread',
 				description: '2 loaves',
 				category: 'Bakery',
-				icon: 'bread',
+				// An emoji, not the key: nothing can render "bread".
+				icon: '🍞',
 			});
 			// An item with no category reports null rather than a nested object.
 			expect(items[1].category).to.equal(null);
@@ -482,8 +483,8 @@ describe('sync', () => {
 
 			const items = JSON.parse(adapter.states.get('households.1.recipes.20.itemsJson') as string);
 			expect(items).to.deep.equal([
-				{ id: 13, name: 'Tomatoes', description: '500 g', optional: false, category: null, icon: null },
-				{ id: 14, name: 'Cream', description: '100 ml', optional: true, category: null, icon: null },
+				{ id: 13, name: 'Tomatoes', description: '500 g', optional: false, category: null, icon: '' },
+				{ id: 14, name: 'Cream', description: '100 ml', optional: true, category: null, icon: '' },
 			]);
 		});
 
