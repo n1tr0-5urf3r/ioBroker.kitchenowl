@@ -2,6 +2,7 @@ import type * as utils from '@iobroker/adapter-core';
 
 import type { KitchenOwlClient } from './api';
 import { localize } from './i18n';
+import { nameIsUnedited } from './objects';
 
 /** Where cached photos live inside the adapter's own file storage. */
 export const PHOTO_DIR = 'photos';
@@ -64,12 +65,24 @@ export class PhotoCache {
 		// ioBroker serves an adapter's files over HTTP only once a meta object
 		// carries them, and without one the copies exist but no visualisation
 		// can load them, which is the whole point of keeping them.
+		const name = localize('Cached KitchenOwl photos');
 		try {
-			await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
-				type: 'meta',
-				common: { name: localize('Cached KitchenOwl photos'), type: 'meta.user' },
-				native: {},
-			});
+			const existing = await this.adapter.getForeignObjectAsync(this.adapter.namespace);
+			if (!existing) {
+				await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
+					type: 'meta',
+					common: { name, type: 'meta.user' },
+					native: {},
+				});
+			} else if (
+				JSON.stringify(existing.common?.name) !== JSON.stringify(name) &&
+				nameIsUnedited(existing.common?.name, name)
+			) {
+				// An earlier version stored this name in English alone. As with every
+				// other object the adapter owns, it is only ours to replace while it
+				// still reads as the one we wrote.
+				await this.adapter.extendForeignObjectAsync(this.adapter.namespace, { common: { name } });
+			}
 		} catch (error) {
 			this.adapter.log.warn(`Could not prepare the photo storage: ${(error as Error).message}`);
 		}

@@ -23,6 +23,7 @@ __export(photos_exports, {
 });
 module.exports = __toCommonJS(photos_exports);
 var import_i18n = require("./i18n");
+var import_objects = require("./objects");
 const PHOTO_DIR = "photos";
 class PhotoCache {
   /**
@@ -58,16 +59,23 @@ class PhotoCache {
   }
   /** Reads back what previous runs already downloaded. */
   async init() {
+    var _a, _b;
     if (this.initialised) {
       return;
     }
     this.initialised = true;
+    const name = (0, import_i18n.localize)("Cached KitchenOwl photos");
     try {
-      await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
-        type: "meta",
-        common: { name: (0, import_i18n.localize)("Cached KitchenOwl photos"), type: "meta.user" },
-        native: {}
-      });
+      const existing = await this.adapter.getForeignObjectAsync(this.adapter.namespace);
+      if (!existing) {
+        await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
+          type: "meta",
+          common: { name, type: "meta.user" },
+          native: {}
+        });
+      } else if (JSON.stringify((_a = existing.common) == null ? void 0 : _a.name) !== JSON.stringify(name) && (0, import_objects.nameIsUnedited)((_b = existing.common) == null ? void 0 : _b.name, name)) {
+        await this.adapter.extendForeignObjectAsync(this.adapter.namespace, { common: { name } });
+      }
     } catch (error) {
       this.adapter.log.warn(`Could not prepare the photo storage: ${error.message}`);
     }

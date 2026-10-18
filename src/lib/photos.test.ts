@@ -38,6 +38,23 @@ class FakeAdapter {
 		return Promise.resolve();
 	}
 
+	public getForeignObjectAsync(id: string): Promise<{ common: { name?: ioBroker.StringOrTranslated } } | null> {
+		if (!this.metaObjects.includes(id)) {
+			return Promise.resolve(null);
+		}
+		return Promise.resolve({ common: { name: this.metaNames.get(id) } });
+	}
+
+	public extendForeignObjectAsync(
+		id: string,
+		obj: { common?: { name?: ioBroker.StringOrTranslated } },
+	): Promise<void> {
+		if (obj.common?.name !== undefined) {
+			this.metaNames.set(id, obj.common.name);
+		}
+		return Promise.resolve();
+	}
+
 	public readDirAsync(_ns: string, dir: string): Promise<{ file: string; isDir: boolean }[]> {
 		const prefix = `${dir}/`;
 		const entries = [...this.files.keys()]
@@ -208,6 +225,31 @@ describe('PhotoCache', () => {
 		for (const language of ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it', 'es', 'pl', 'uk', 'zh-cn']) {
 			expect(name, `missing ${language}`).to.have.property(language);
 		}
+	});
+
+	it('brings an English-only meta name from an earlier version up to date', async () => {
+		initNames(ADMIN_DIR);
+		const { client } = fakeClient();
+		// What version 0.0.6 and older left behind: the name as a plain string.
+		adapter.metaObjects.push('kitchenowl.0');
+		adapter.metaNames.set('kitchenowl.0', 'Cached KitchenOwl photos');
+
+		await new PhotoCache(adapter.asAdapter(), client).store(['a.jpg']);
+
+		const name = adapter.metaNames.get('kitchenowl.0') as Record<string, string>;
+		expect(name).to.be.an('object');
+		expect(name.de).to.be.a('string');
+	});
+
+	it('leaves a meta name alone that somebody renamed', async () => {
+		initNames(ADMIN_DIR);
+		const { client } = fakeClient();
+		adapter.metaObjects.push('kitchenowl.0');
+		adapter.metaNames.set('kitchenowl.0', 'My photos');
+
+		await new PhotoCache(adapter.asAdapter(), client).store(['a.jpg']);
+
+		expect(adapter.metaNames.get('kitchenowl.0')).to.equal('My photos');
 	});
 
 	it('picks up what an earlier run already downloaded', async () => {

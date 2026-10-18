@@ -18,7 +18,8 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var objects_exports = {};
 __export(objects_exports, {
-  ObjectWriter: () => ObjectWriter
+  ObjectWriter: () => ObjectWriter,
+  nameIsUnedited: () => nameIsUnedited
 });
 module.exports = __toCommonJS(objects_exports);
 var import_i18n = require("./i18n");
@@ -283,6 +284,7 @@ class ObjectWriter {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  ObjectWriter
+  ObjectWriter,
+  nameIsUnedited
 });
 //# sourceMappingURL=objects.js.map

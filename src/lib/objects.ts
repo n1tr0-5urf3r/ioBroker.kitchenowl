@@ -94,7 +94,7 @@ function englishOf(name: unknown): string | undefined {
  * @param existing - Name the object database holds
  * @param desired - Name this run wants
  */
-function nameIsUnedited(existing: unknown, desired: unknown): boolean {
+export function nameIsUnedited(existing: unknown, desired: unknown): boolean {
 	const english = englishOf(existing);
 	return english !== undefined && english === englishOf(desired);
 }
