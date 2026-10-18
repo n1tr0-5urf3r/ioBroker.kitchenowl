@@ -236,8 +236,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 	The heading has to be present for a release to run at all; without it the
 	script stops with "The changelog placeholder is missing from README.md!".
 -->
-
-### **WORK IN PROGRESS**
+### 0.0.6 (2026-10-18)
 
 - (n1tr0-5urf3r) Object names carry every language ioBroker asks for instead of only English and German. They now come from the same translation files the admin interface uses, so `npm run translate` keeps them in step. The photo storage was named in English alone and is covered too
 - (n1tr0-5urf3r) The colour of an expense category is a plain text state. Its old role is meant for a colour something can be set to and requires a writable state, which this one is not
