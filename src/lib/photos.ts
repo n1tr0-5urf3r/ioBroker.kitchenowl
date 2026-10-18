@@ -1,6 +1,7 @@
 import type * as utils from '@iobroker/adapter-core';
 
 import type { KitchenOwlClient } from './api';
+import { localize } from './i18n';
 
 /** Where cached photos live inside the adapter's own file storage. */
 export const PHOTO_DIR = 'photos';
@@ -66,7 +67,7 @@ export class PhotoCache {
 		try {
 			await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
 				type: 'meta',
-				common: { name: 'Cached KitchenOwl photos', type: 'meta.user' },
+				common: { name: localize('Cached KitchenOwl photos'), type: 'meta.user' },
 				native: {},
 			});
 		} catch (error) {

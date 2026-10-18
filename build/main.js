@@ -75,7 +75,11 @@ class Kitchenowl extends utils.Adapter {
    */
   async onReady() {
     var _a, _b;
-    (0, import_i18n.initNames)((0, import_node_path.join)(__dirname, "..", import_i18n.I18N_ROOT));
+    try {
+      (0, import_i18n.initNames)((0, import_node_path.join)(__dirname, "..", import_i18n.I18N_ROOT));
+    } catch (error) {
+      this.log.warn(`Could not read the translations, object names stay English: ${error.message}`);
+    }
     await this.setState("info.connection", false, true);
     const url = ((_a = this.config.url) != null ? _a : "").trim();
     const token = ((_b = this.config.token) != null ? _b : "").trim();

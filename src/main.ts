@@ -77,8 +77,14 @@ class Kitchenowl extends utils.Adapter {
 	 */
 	private async onReady(): Promise<void> {
 		// Object names are built from the translation files, so they have to be
-		// loaded before anything creates an object.
-		initNames(join(__dirname, '..', I18N_ROOT));
+		// loaded before anything creates an object. An installation that is
+		// missing them still works, with names in English, which is worth far
+		// more than refusing to start over a cosmetic detail.
+		try {
+			initNames(join(__dirname, '..', I18N_ROOT));
+		} catch (error) {
+			this.log.warn(`Could not read the translations, object names stay English: ${(error as Error).message}`);
+		}
 
 		await this.setState('info.connection', false, true);
 

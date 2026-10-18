@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import type * as utils from '@iobroker/adapter-core';
 
 import type { KitchenOwlClient } from './api';
+import { initNames } from './i18n';
+import { ADMIN_DIR } from './i18n.test';
 import { PHOTO_DIR, PhotoCache } from './photos';
 
 /** Enough of an adapter to exercise the file storage calls. */
@@ -11,6 +13,8 @@ class FakeAdapter {
 	public readonly warnings: string[] = [];
 	/** Ids a meta object was created for, so the HTTP side can be checked. */
 	public readonly metaObjects: string[] = [];
+	/** The name each meta object was given, so its translations can be checked. */
+	public readonly metaNames = new Map<string, ioBroker.StringOrTranslated>();
 	public readonly log = {
 		silly: (): void => {},
 		debug: (): void => {},
@@ -21,9 +25,15 @@ class FakeAdapter {
 		error: (): void => {},
 	};
 
-	public setForeignObjectNotExistsAsync(id: string, obj: { type: string }): Promise<void> {
+	public setForeignObjectNotExistsAsync(
+		id: string,
+		obj: { type: string; common?: { name?: ioBroker.StringOrTranslated } },
+	): Promise<void> {
 		if (obj.type === 'meta') {
 			this.metaObjects.push(id);
+			if (obj.common?.name !== undefined) {
+				this.metaNames.set(id, obj.common.name);
+			}
 		}
 		return Promise.resolve();
 	}
@@ -183,6 +193,21 @@ describe('PhotoCache', () => {
 
 		// Without it the copies exist but no visualisation can load them.
 		expect(adapter.metaObjects).to.deep.equal(['kitchenowl.0']);
+	});
+
+	it('names the meta object in every language ioBroker asks for', async () => {
+		// It is created outside the ObjectWriter, so the sweep over the synced
+		// objects never sees it and it has to be checked on its own.
+		initNames(ADMIN_DIR);
+		const { client } = fakeClient();
+
+		await new PhotoCache(adapter.asAdapter(), client).store(['a.jpg']);
+
+		const name = adapter.metaNames.get('kitchenowl.0') as Record<string, string>;
+		expect(name).to.be.an('object');
+		for (const language of ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it', 'es', 'pl', 'uk', 'zh-cn']) {
+			expect(name, `missing ${language}`).to.have.property(language);
+		}
 	});
 
 	it('picks up what an earlier run already downloaded', async () => {

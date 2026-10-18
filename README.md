@@ -239,8 +239,9 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 
 ### **WORK IN PROGRESS**
 
-- (n1tr0-5urf3r) Object names carry every language ioBroker asks for instead of only English and German. They now come from the same translation files the admin interface uses, so `npm run translate` keeps them in step
+- (n1tr0-5urf3r) Object names carry every language ioBroker asks for instead of only English and German. They now come from the same translation files the admin interface uses, so `npm run translate` keeps them in step. The photo storage was named in English alone and is covered too
 - (n1tr0-5urf3r) The colour of an expense category is a plain text state. Its old role is meant for a colour something can be set to and requires a writable state, which this one is not
+- (n1tr0-5urf3r) An installation whose translation files cannot be read logs a warning and keeps the names English instead of refusing to start
 
 ### 0.0.5 (2026-10-17)
 

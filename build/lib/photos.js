@@ -22,6 +22,7 @@ __export(photos_exports, {
   PhotoCache: () => PhotoCache
 });
 module.exports = __toCommonJS(photos_exports);
+var import_i18n = require("./i18n");
 const PHOTO_DIR = "photos";
 class PhotoCache {
   /**
@@ -64,7 +65,7 @@ class PhotoCache {
     try {
       await this.adapter.setForeignObjectNotExistsAsync(this.adapter.namespace, {
         type: "meta",
-        common: { name: "Cached KitchenOwl photos", type: "meta.user" },
+        common: { name: (0, import_i18n.localize)("Cached KitchenOwl photos"), type: "meta.user" },
         native: {}
       });
     } catch (error) {
