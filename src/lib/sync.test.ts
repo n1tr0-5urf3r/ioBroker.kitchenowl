@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { KitchenOwlClient } from './api';
+import { initNames } from './i18n';
+import { ADMIN_DIR } from './i18n.test';
 import { ObjectWriter } from './objects';
 import { FakeAdapter } from './objects.test';
 import {
@@ -57,6 +59,8 @@ const BASE_CONFIG: SyncConfig = {
 };
 
 describe('sync', () => {
+	before(() => initNames(ADMIN_DIR));
+
 	let adapter: FakeAdapter;
 	let writer: ObjectWriter;
 	let client: KitchenOwlClient;
@@ -527,10 +531,10 @@ describe('sync', () => {
 	});
 
 	describe('localization', () => {
-		it('has a German name for every state the adapter defines itself', async () => {
+		it('gives every state it names itself all the languages ioBroker asks for', async () => {
 			await syncEverything();
 
-			// Names taken from the fixtures are KitchenOwl's own and stay untranslated.
+			// Names taken from the fixtures are KitchenOwl's own and stay as they are.
 			const fromKitchenOwl = new Set([
 				'Example Household',
 				'Alice Example',
@@ -543,13 +547,25 @@ describe('sync', () => {
 				'Pancakes',
 				'Eating out',
 			]);
+			const wanted = ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it', 'es', 'pl', 'uk', 'zh-cn'];
 
-			const untranslated = [...adapter.objects.entries()]
-				.filter(([, obj]) => typeof obj.common.name === 'string')
-				.filter(([, obj]) => !fromKitchenOwl.has(obj.common.name as string))
-				.map(([id, obj]) => `${id} (${String(obj.common.name)})`);
+			const problems: string[] = [];
+			for (const [id, obj] of adapter.objects) {
+				const name = obj.common.name;
+				if (typeof name === 'string') {
+					if (!fromKitchenOwl.has(name)) {
+						problems.push(`${id} (${name}) is not translated at all`);
+					}
+					continue;
+				}
+				const missing = wanted.filter(language => !(language in (name as Record<string, string>)));
+				if (missing.length > 0) {
+					problems.push(`${id} is missing ${missing.join(', ')}`);
+				}
+			}
 
-			expect(untranslated.join('\n'), 'states whose own name has no German translation').to.equal('');
+			// The repository check reports one error per object for this.
+			expect(problems.join('\n'), 'object names missing languages').to.equal('');
 		});
 	});
 

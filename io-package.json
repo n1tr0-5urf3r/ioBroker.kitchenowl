@@ -172,8 +172,17 @@
       "type": "channel",
       "common": {
         "name": {
+          "de": "Information",
           "en": "Information",
-          "de": "Information"
+          "es": "Información",
+          "fr": "Information",
+          "it": "Informazioni",
+          "nl": "Informatie",
+          "pl": "Informacja",
+          "pt": "Informação",
+          "ru": "Информация",
+          "uk": "Інформація",
+          "zh-cn": "信息"
         }
       },
       "native": {}
@@ -183,8 +192,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "Gerät oder Dienst verbunden",
           "en": "Device or service connected",
-          "de": "Gerät oder Dienst verbunden"
+          "es": "Dispositivo o servicio conectado",
+          "fr": "Appareil ou service connecté",
+          "it": "Dispositivo o servizio connesso",
+          "nl": "Apparaat of dienst verbonden",
+          "pl": "Podłączone urządzenie lub usługa",
+          "pt": "Dispositivo ou serviço conectado",
+          "ru": "Устройство или служба подключены",
+          "uk": "Пристрій або послугу підключено",
+          "zh-cn": "连接的设备或服务"
         },
         "type": "boolean",
         "role": "indicator.connected",
@@ -199,8 +217,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "Zeitpunkt des letzten erfolgreichen Abrufs",
           "en": "Timestamp of the last successful poll",
-          "de": "Zeitpunkt des letzten erfolgreichen Abrufs"
+          "es": "Marca de tiempo de la última encuesta exitosa",
+          "fr": "Horodatage du dernier sondage réussi",
+          "it": "Timestamp dell'ultimo sondaggio riuscito",
+          "nl": "Tijdstempel van de laatste succesvolle peiling",
+          "pl": "Sygnatura czasowa ostatniej udanej ankiety",
+          "pt": "Carimbo de data e hora da última enquete bem-sucedida",
+          "ru": "Временная метка последнего успешного опроса",
+          "uk": "Мітка часу останнього успішного опитування",
+          "zh-cn": "上次成功投票的时间戳"
         },
         "type": "number",
         "role": "value.time",
@@ -214,8 +241,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "Meldung des letzten fehlgeschlagenen Abrufs",
           "en": "Message of the last failed poll",
-          "de": "Meldung des letzten fehlgeschlagenen Abrufs"
+          "es": "Mensaje de la última encuesta fallida",
+          "fr": "Message du dernier sondage échoué",
+          "it": "Messaggio dell'ultimo sondaggio fallito",
+          "nl": "Bericht van de laatste mislukte peiling",
+          "pl": "Wiadomość o ostatniej nieudanej ankiecie",
+          "pt": "Mensagem da última enquete falhada",
+          "ru": "Сообщение о последнем неудавшемся опросе",
+          "uk": "Повідомлення останнього невдалого опитування",
+          "zh-cn": "上次投票失败的消息"
         },
         "type": "string",
         "role": "text",
@@ -230,8 +266,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "KitchenOwl-Backend-Version",
           "en": "KitchenOwl backend version",
-          "de": "KitchenOwl-Backend-Version"
+          "es": "Versión backend de KitchenOwl",
+          "fr": "Version back-end de KitchenOwl",
+          "it": "Versione backend di KitchenOwl",
+          "nl": "KitchenOwl-backendversie",
+          "pl": "Wersja backendowa KitchenOwl",
+          "pt": "Versão de back-end do KitchenOwl",
+          "ru": "Версия бэкэнда KitchenOwl",
+          "uk": "Бекенд-версія KitchenOwl",
+          "zh-cn": "KitchenOwl 后端版本"
         },
         "type": "number",
         "role": "value",
@@ -245,8 +290,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "Vom Server geforderte Mindest-Frontend-Version",
           "en": "Minimum frontend version required by the server",
-          "de": "Vom Server geforderte Mindest-Frontend-Version"
+          "es": "Versión mínima de frontend requerida por el servidor",
+          "fr": "Version frontale minimale requise par le serveur",
+          "it": "Versione minima del frontend richiesta dal server",
+          "nl": "Minimale frontendversie vereist door de server",
+          "pl": "Minimalna wersja frontendu wymagana przez serwer",
+          "pt": "Versão mínima do frontend exigida pelo servidor",
+          "ru": "Минимальная версия интерфейса, необходимая серверу",
+          "uk": "Мінімальна версія інтерфейсу, яка потрібна серверу",
+          "zh-cn": "服务器所需的最低前端版本"
         },
         "type": "number",
         "role": "value",
@@ -260,8 +314,17 @@
       "type": "channel",
       "common": {
         "name": {
+          "de": "Adapterbefehle",
           "en": "Adapter commands",
-          "de": "Adapterbefehle"
+          "es": "Comandos del adaptador",
+          "fr": "Commandes d'adaptateur",
+          "it": "Comandi dell'adattatore",
+          "nl": "Adapter-opdrachten",
+          "pl": "Polecenia adaptera",
+          "pt": "Comandos do adaptador",
+          "ru": "Команды адаптера",
+          "uk": "Команди адаптера",
+          "zh-cn": "适配器命令"
         }
       },
       "native": {}
@@ -271,8 +334,17 @@
       "type": "state",
       "common": {
         "name": {
+          "de": "Sofortigen Abruf auslösen",
           "en": "Trigger an immediate poll",
-          "de": "Sofortigen Abruf auslösen"
+          "es": "Activar una encuesta inmediata",
+          "fr": "Déclenchez un sondage immédiat",
+          "it": "Attiva un sondaggio immediato",
+          "nl": "Activeer onmiddellijk een peiling",
+          "pl": "Uruchom natychmiastową ankietę",
+          "pt": "Acione uma enquete imediata",
+          "ru": "Запустить немедленный опрос",
+          "uk": "Негайно запустіть опитування",
+          "zh-cn": "立即触发民意调查"
         },
         "type": "boolean",
         "role": "button",

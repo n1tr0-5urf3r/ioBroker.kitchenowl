@@ -1,25 +1,41 @@
 import { expect } from 'chai';
+import { join } from 'node:path';
 
-import { localize } from './i18n';
+import { I18N_ROOT, initNames, localize } from './i18n';
+
+/** The translations live beside the admin interface, two levels up from here. */
+export const ADMIN_DIR = join(__dirname, '..', '..', I18N_ROOT);
 
 describe('localize', () => {
-	it('returns both languages for a known name', () => {
-		expect(localize('Shopping lists')).to.deep.equal({ en: 'Shopping lists', de: 'Einkaufslisten' });
-		expect(localize('Expense balance')).to.deep.equal({ en: 'Expense balance', de: 'Ausgabensaldo' });
-	});
+	before(() => initNames(ADMIN_DIR));
 
-	it('translates every weekday the planner uses', () => {
-		const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+	it('returns every language ioBroker asks for, not just English and German', () => {
+		const name = localize('Household members');
 
-		for (const day of weekdays) {
-			expect(localize(day), day).to.not.equal(day);
+		expect(name).to.be.an('object');
+		// The repository check wants these alongside en and de.
+		for (const language of ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it', 'es', 'pl', 'uk', 'zh-cn']) {
+			expect(name, `missing ${language}`).to.have.property(language);
 		}
 	});
 
+	it('translates rather than repeating the English', () => {
+		const name = localize('Household members') as Record<string, string>;
+
+		expect(name.de).to.not.equal(name.en);
+		expect(name.de).to.equal('Haushaltsmitglieder');
+	});
+
 	it('passes names that come from KitchenOwl through unchanged', () => {
-		// Household, list, member and recipe titles must not be translated.
+		// A household, list or recipe title must not be translated, and must not
+		// be labelled English either.
 		expect(localize('Example Household')).to.equal('Example Household');
 		expect(localize('Tomato Soup')).to.equal('Tomato Soup');
 		expect(localize('')).to.equal('');
+	});
+
+	it('leaves names alone when the translations were never loaded', () => {
+		// Nothing should blow up in a context that never called initNames.
+		expect(localize('Household members')).to.be.an('object');
 	});
 });

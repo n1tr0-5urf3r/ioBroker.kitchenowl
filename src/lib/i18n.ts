@@ -1,118 +1,55 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 /**
- * German names for the states and channels the adapter creates.
+ * Directory holding the translations, relative to the compiled `build` folder.
  *
- * ioBroker renders `common.name` per user language, so every static name goes
- * through here. Names that come from KitchenOwl itself, such as a household or
- * recipe title, are passed through untranslated.
+ * They are the same files the admin interface uses, so a name is translated
+ * once and `npm run translate` keeps every language in step.
  */
-const GERMAN: Record<string, string> = {
-	Icon: 'Symbol',
-	'Remove every meal planned on this day': 'Alle an diesem Tag geplanten Mahlzeiten entfernen',
-	'Meals planned on this day': 'An diesem Tag geplante Mahlzeiten',
-	'Recipe names': 'Rezeptnamen',
-	'Meals on this day': 'Mahlzeiten an diesem Tag',
-	Colour: 'Farbe',
-	'Newest expense paid by': 'Neueste Ausgabe bezahlt von',
-	'Adapter commands': 'Adapterbefehle',
-	'Add an expense, as JSON: {"name": "Groceries", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}]}':
-		'Ausgabe anlegen, als JSON: {"name": "Einkauf", "amount": 12.5, "paid_by": {"id": 1}, "paid_for": [{"id": 1}]}',
-	'Add an item by name, or as JSON: {"name": "Milk", "description": "2 L"}':
-		'Artikel hinzufügen, über den Namen oder als JSON: {"name": "Milch", "description": "2 l"}',
-	'All item categories': 'Alle Artikelkategorien',
-	'All items on the list': 'Alle Artikel auf der Liste',
-	'All known items': 'Alle bekannten Artikel',
-	'All recipe tags': 'Alle Rezept-Schlagwörter',
-	'All shopping lists': 'Alle Einkaufslisten',
-	Budget: 'Budget',
-	Category: 'Kategorie',
-	'Configured view order': 'Konfigurierte Ansichtsreihenfolge',
-	'Cooking date': 'Kochdatum',
-	'Cooking time': 'Garzeit',
-	'Currently planned': 'Aktuell eingeplant',
-	'Default shopping list ID': 'ID der Standard-Einkaufsliste',
-	Description: 'Beschreibung',
-	'Description, for example the amount': 'Beschreibung, zum Beispiel die Menge',
-	'Display name': 'Anzeigename',
-	'Expense balance': 'Ausgabensaldo',
-	'Expense balance per member': 'Ausgabensaldo je Mitglied',
-	'Expense categories': 'Ausgabenkategorien',
-	Expenses: 'Ausgaben',
-	'Expenses feature enabled': 'Ausgabenfunktion aktiviert',
-	Friday: 'Freitag',
-	'Household administrator': 'Haushaltsadministrator',
-	'Household members': 'Haushaltsmitglieder',
-	'Household owner': 'Haushaltsinhaber',
-	Households: 'Haushalte',
-	'Import a recipe from a URL': 'Rezept von einer URL importieren',
-	Information: 'Information',
-	Ingredients: 'Zutaten',
-	'Item catalog': 'Artikelkatalog',
-	Items: 'Artikel',
-	'Items as text': 'Artikel als Text',
-	Language: 'Sprache',
-	'Last seen': 'Zuletzt gesehen',
-	'Meal planner': 'Essensplaner',
-	Monday: 'Montag',
-	Name: 'Name',
-	'Newest expense': 'Neueste Ausgabe',
-	'Newest expense amount': 'Betrag der neuesten Ausgabe',
-	'Newest expense date': 'Datum der neuesten Ausgabe',
-	'Next cooking date': 'Nächstes Kochdatum',
-	'Next planned meal': 'Nächste geplante Mahlzeit',
-	'Next planned recipe ID': 'ID des nächsten geplanten Rezepts',
-	'Number of categories': 'Anzahl der Kategorien',
-	'Number of expenses read': 'Anzahl der gelesenen Ausgaben',
-	'Number of items': 'Anzahl der Artikel',
-	'Number of known items': 'Anzahl der bekannten Artikel',
-	'Number of lists': 'Anzahl der Listen',
-	'Number of members': 'Anzahl der Mitglieder',
-	'Number of planned meals': 'Anzahl der geplanten Mahlzeiten',
-	'Number of recipes': 'Anzahl der Rezepte',
-	'Number of tags': 'Anzahl der Schlagwörter',
-	'Photo URL': 'Foto-URL',
-	'Plan a recipe, as JSON: {"recipe_id": 1, "cooking_date": 1700000000000}':
-		'Rezept einplanen, als JSON: {"recipe_id": 1, "cooking_date": 1700000000000}',
-	'Planned meals': 'Geplante Mahlzeiten',
-	'Planned meals by weekday': 'Geplante Mahlzeiten nach Wochentag',
-	'Planned weekdays': 'Geplante Wochentage',
-	'Planner feature enabled': 'Planerfunktion aktiviert',
-	'Preparation time': 'Vorbereitungszeit',
-	'Recalculate member balances': 'Mitgliedersalden neu berechnen',
-	'Recent expenses': 'Aktuelle Ausgaben',
-	'Recently removed items': 'Kürzlich entfernte Artikel',
-	'Recipe overview': 'Rezeptübersicht',
-	Recipes: 'Rezepte',
-	'Remove all items from the list': 'Alle Artikel von der Liste entfernen',
-	'Remove this item from the list': 'Diesen Artikel von der Liste entfernen',
-	'Result of the last import': 'Ergebnis des letzten Imports',
-	Saturday: 'Samstag',
-	Servings: 'Portionen',
-	'Shopping lists': 'Einkaufslisten',
-	Source: 'Quelle',
-	'Spending overview by period': 'Ausgabenübersicht nach Zeitraum',
-	'Spent in the current period': 'Im aktuellen Zeitraum ausgegeben',
-	Sunday: 'Sonntag',
-	'Tags as text': 'Schlagwörter als Text',
-	Thursday: 'Donnerstag',
-	'Total spent in the current period': 'Gesamtausgaben im aktuellen Zeitraum',
-	'Total time': 'Gesamtzeit',
-	Tuesday: 'Dienstag',
-	Uncategorised: 'Ohne Kategorie',
-	'User ID': 'Benutzer-ID',
-	Username: 'Benutzername',
-	Visibility: 'Sichtbarkeit',
-	Wednesday: 'Mittwoch',
-};
+export const I18N_ROOT = 'admin';
+
+/** Every known name, keyed by its English text, then by language. */
+let words: Record<string, Record<string, string>> | null = null;
+
+/**
+ * Loads the translations the object names are built from.
+ *
+ * Reads the files directly rather than going through adapter-core's I18n,
+ * which pulls in the whole controller and cannot be loaded from a test.
+ *
+ * @param rootDir - Directory holding the `i18n` folder
+ */
+export function initNames(rootDir: string): void {
+	const dir = join(rootDir, 'i18n');
+	const loaded: Record<string, Record<string, string>> = {};
+
+	for (const file of readdirSync(dir)) {
+		if (!file.endsWith('.json')) {
+			continue;
+		}
+		const language = file.slice(0, -'.json'.length);
+		const entries = JSON.parse(readFileSync(join(dir, file), 'utf8')) as Record<string, string>;
+
+		for (const [key, value] of Object.entries(entries)) {
+			loaded[key] ??= {};
+			loaded[key][language] = value;
+		}
+	}
+	words = loaded;
+}
 
 /**
  * Turns an English name into the multilingual form ioBroker stores.
  *
- * Falling back to the English string keeps dynamic names, which have no entry
- * in the table, working unchanged.
+ * ioBroker asks for every language it knows, not only English and German, so
+ * the names come from the translation files rather than a table in here. A
+ * name with no entry, which is every name KitchenOwl supplies itself, comes
+ * back exactly as it went in rather than being labelled English.
  *
  * @param name - English name of the state or channel
  */
 export function localize(name: string): ioBroker.StringOrTranslated {
-	const german = GERMAN[name];
-	return german ? { en: name, de: german } : name;
+	const translated = name && words ? words[name] : undefined;
+	return translated ? ({ ...translated } as ioBroker.StringOrTranslated) : name;
 }

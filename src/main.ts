@@ -2,11 +2,14 @@
  * Created with @iobroker/create-adapter v3.1.5
  */
 
+import { join } from 'node:path';
+
 import * as utils from '@iobroker/adapter-core';
 
 import { KitchenOwlApiError, KitchenOwlClient } from './lib/api';
 import { type ParsedCommand, parseCommand, runCommand } from './lib/commands';
 import { connectionOptions, selectHouseholds } from './lib/instance';
+import { I18N_ROOT, initNames } from './lib/i18n';
 import { type ObjectCache, ObjectWriter } from './lib/objects';
 import { PhotoCache } from './lib/photos';
 import {
@@ -73,6 +76,10 @@ class Kitchenowl extends utils.Adapter {
 	 * Is called when databases are connected and adapter received configuration.
 	 */
 	private async onReady(): Promise<void> {
+		// Object names are built from the translation files, so they have to be
+		// loaded before anything creates an object.
+		initNames(join(__dirname, '..', I18N_ROOT));
+
 		await this.setState('info.connection', false, true);
 
 		const url = (this.config.url ?? '').trim();

@@ -21,10 +21,12 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var import_node_path = require("node:path");
 var utils = __toESM(require("@iobroker/adapter-core"));
 var import_api = require("./lib/api");
 var import_commands = require("./lib/commands");
 var import_instance = require("./lib/instance");
+var import_i18n = require("./lib/i18n");
 var import_objects = require("./lib/objects");
 var import_photos = require("./lib/photos");
 var import_sync = require("./lib/sync");
@@ -73,6 +75,7 @@ class Kitchenowl extends utils.Adapter {
    */
   async onReady() {
     var _a, _b;
+    (0, import_i18n.initNames)((0, import_node_path.join)(__dirname, "..", import_i18n.I18N_ROOT));
     await this.setState("info.connection", false, true);
     const url = ((_a = this.config.url) != null ? _a : "").trim();
     const token = ((_b = this.config.token) != null ? _b : "").trim();

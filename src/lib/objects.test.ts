@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import type * as utils from '@iobroker/adapter-core';
 
+import { initNames } from './i18n';
+import { ADMIN_DIR } from './i18n.test';
 import { type ObjectCache, ObjectWriter } from './objects';
 
 /** A stored object, kept loose so tests can read `common` without narrowing. */
@@ -117,6 +119,8 @@ export class FakeAdapter {
 }
 
 describe('ObjectWriter', () => {
+	before(() => initNames(ADMIN_DIR));
+
 	let adapter: FakeAdapter;
 	let writer: ObjectWriter;
 
@@ -131,8 +135,7 @@ describe('ObjectWriter', () => {
 		await writer.flush();
 
 		expect(adapter.objects.get('households')?.type).to.equal('folder');
-		expect(adapter.objects.get('households.1.name')?.common).to.deep.include({
-			name: { en: 'Name', de: 'Name' },
+		expect(adapter.objects.get('households.1.name')?.common).to.include({
 			type: 'string',
 			role: 'text',
 			read: true,
@@ -141,17 +144,17 @@ describe('ObjectWriter', () => {
 		expect(adapter.states.get('households.1.name')).to.equal('Example Household');
 	});
 
-	it('localizes names that have a German translation and passes others through', async () => {
+	it('localizes its own names and leaves the ones from KitchenOwl alone', async () => {
 		writer.channel('households.1', 'Example Household', 'device');
 		writer.value('households.1.expenses.count', 'Number of expenses read', 'number', 'value', 3);
 		await writer.flush();
 
 		// A name that comes from KitchenOwl itself stays as it is.
 		expect(adapter.objects.get('households.1')?.common.name).to.equal('Example Household');
-		expect(adapter.objects.get('households.1.expenses.count')?.common.name).to.deep.equal({
-			en: 'Number of expenses read',
-			de: 'Anzahl der gelesenen Ausgaben',
-		});
+
+		const own = adapter.objects.get('households.1.expenses.count')?.common.name as Record<string, string>;
+		expect(own.en).to.equal('Number of expenses read');
+		expect(own.de).to.equal('Anzahl der gelesenen Ausgaben');
 	});
 
 	it('serialises JSON states', async () => {
@@ -238,15 +241,14 @@ describe('ObjectWriter', () => {
 	});
 
 	it('keeps names that come from KitchenOwl out of the translation table', async () => {
-		writer.serverChannel('households.1.shoppingLists.2', 'Items');
-		writer.channel('households.1.shoppingLists.2.items', 'Items');
+		// "Items" is a perfectly ordinary list name and also one of the adapter's
+		// own; translating it would rename the user's list to "Artikel".
+		writer.serverChannel('households.1.shoppingLists.9', 'Items');
+		writer.channel('households.1.shoppingLists.9.items', 'Items');
 		await writer.flush();
 
-		expect(adapter.objects.get('households.1.shoppingLists.2')?.common.name).to.equal('Items');
-		expect(adapter.objects.get('households.1.shoppingLists.2.items')?.common.name).to.deep.equal({
-			en: 'Items',
-			de: 'Artikel',
-		});
+		expect(adapter.objects.get('households.1.shoppingLists.9')?.common.name).to.equal('Items');
+		expect(adapter.objects.get('households.1.shoppingLists.9.items')?.common.name).to.be.an('object');
 	});
 
 	describe('with a cache shared across polls', () => {

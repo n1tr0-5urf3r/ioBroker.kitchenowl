@@ -384,7 +384,7 @@ function syncExpenses(writer, base, expenses, categories, overview, config, memb
     writer.serverChannel(id, category.name);
     writer.value(`${id}.name`, "Name", "string", "text", category.name);
     writer.value(`${id}.budget`, "Budget", "number", "value", (_c = category.budget) != null ? _c : 0);
-    writer.value(`${id}.color`, "Colour", "string", "level.color.rgb", argbToHex(category.color));
+    writer.value(`${id}.color`, "Colour", "string", "text", argbToHex(category.color));
     writer.value(
       `${id}.currentPeriodSum`,
       "Spent in the current period",

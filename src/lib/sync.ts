@@ -546,7 +546,9 @@ export function syncExpenses(
 
 		writer.value(`${id}.name`, 'Name', 'string', 'text', category.name);
 		writer.value(`${id}.budget`, 'Budget', 'number', 'value', category.budget ?? 0);
-		writer.value(`${id}.color`, 'Colour', 'string', 'level.color.rgb', argbToHex(category.color));
+		// Not a level.color.rgb: that role is for a colour something can be
+		// set to, and this one only reports what KitchenOwl has.
+		writer.value(`${id}.color`, 'Colour', 'string', 'text', argbToHex(category.color));
 		writer.value(
 			`${id}.currentPeriodSum`,
 			'Spent in the current period',
