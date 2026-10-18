@@ -236,7 +236,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 	The heading has to be present for a release to run at all; without it the
 	script stops with "The changelog placeholder is missing from README.md!".
 -->
-### **WORK IN PROGRESS**
+### 0.0.7 (2026-10-18)
 
 - (n1tr0-5urf3r) Object names written by an earlier version are brought up to date on an upgrade. Names were only ever created, never corrected, so an installation that already had the tree kept the English and German names of version 0.0.5 even after updating. A name that was edited in the admin interface or that comes from KitchenOwl is still left untouched
 

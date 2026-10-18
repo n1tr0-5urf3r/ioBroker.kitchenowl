@@ -1,6 +1,6 @@
 {
   "name": "iobroker.kitchenowl",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Connects ioBroker to a self-hosted KitchenOwl server: shopping lists, recipes, meal planner, expenses and household balances",
   "author": {
     "name": "n1tr0-5urf3r",
