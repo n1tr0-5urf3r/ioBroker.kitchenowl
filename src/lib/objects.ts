@@ -65,6 +65,41 @@ function managedFieldsDiffer(existing: Record<string, unknown>, desired: Record<
 }
 
 /**
+ * The English text of a name, whatever shape it happens to be stored in.
+ *
+ * @param name - Name as the object database has it, or as a definition wants it
+ */
+function englishOf(name: unknown): string | undefined {
+	if (typeof name === 'string') {
+		return name;
+	}
+	if (name && typeof name === 'object') {
+		const english = (name as Record<string, unknown>).en;
+		if (typeof english === 'string') {
+			return english;
+		}
+	}
+	return undefined;
+}
+
+/**
+ * Whether an existing name is still the one the adapter itself wrote.
+ *
+ * Earlier versions of the adapter stored names in fewer languages, so an
+ * upgrade has to be able to replace them, and it may only do that where the
+ * name was never edited in the admin UI. The English text tells the two apart:
+ * it is the one language every version has always written, and both a rename
+ * in the admin UI and a rename in KitchenOwl replace it.
+ *
+ * @param existing - Name the object database holds
+ * @param desired - Name this run wants
+ */
+function nameIsUnedited(existing: unknown, desired: unknown): boolean {
+	const english = englishOf(existing);
+	return english !== undefined && english === englishOf(desired);
+}
+
+/**
  * Collects the objects and values one poll produced, then applies them.
  *
  * Writing goes through `setStateChanged` so that an unchanged poll does not
@@ -271,11 +306,21 @@ export class ObjectWriter {
 		}
 
 		// The object outlived an adapter restart, so a name that differs may just
-		// as well have been edited in the admin UI. The rest is the adapter's.
-		if (existing.type !== desired.type || managedFieldsDiffer(existing.common, desired.common)) {
+		// as well have been edited in the admin UI. It is only this adapter's to
+		// replace where it still reads as the one an earlier version wrote, which
+		// is what carries a name stored in fewer languages over to an upgrade.
+		const name = nameIsUnedited(existing.common.name, desired.common.name)
+			? desired.common.name
+			: existing.common.name;
+
+		if (
+			existing.type !== desired.type ||
+			managedFieldsDiffer(existing.common, desired.common) ||
+			JSON.stringify(name) !== JSON.stringify(existing.common.name)
+		) {
 			await this.adapter.extendObjectAsync(id, {
 				...desired,
-				common: { ...desired.common, name: existing.common.name },
+				common: { ...desired.common, name },
 			} as ioBroker.PartialObject);
 		}
 		this.cache.set(id, signature);

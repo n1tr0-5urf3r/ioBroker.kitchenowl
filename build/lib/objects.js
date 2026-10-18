@@ -26,6 +26,22 @@ const MANAGED_FIELDS = ["type", "role", "read", "write", "unit", "states"];
 function managedFieldsDiffer(existing, desired) {
   return MANAGED_FIELDS.some((field) => JSON.stringify(existing[field]) !== JSON.stringify(desired[field]));
 }
+function englishOf(name) {
+  if (typeof name === "string") {
+    return name;
+  }
+  if (name && typeof name === "object") {
+    const english = name.en;
+    if (typeof english === "string") {
+      return english;
+    }
+  }
+  return void 0;
+}
+function nameIsUnedited(existing, desired) {
+  const english = englishOf(existing);
+  return english !== void 0 && english === englishOf(desired);
+}
 class ObjectWriter {
   /**
    * @param adapter - Adapter instance the objects belong to
@@ -195,10 +211,11 @@ class ObjectWriter {
       this.cache.set(id, signature);
       return;
     }
-    if (existing.type !== desired.type || managedFieldsDiffer(existing.common, desired.common)) {
+    const name = nameIsUnedited(existing.common.name, desired.common.name) ? desired.common.name : existing.common.name;
+    if (existing.type !== desired.type || managedFieldsDiffer(existing.common, desired.common) || JSON.stringify(name) !== JSON.stringify(existing.common.name)) {
       await this.adapter.extendObjectAsync(id, {
         ...desired,
-        common: { ...desired.common, name: existing.common.name }
+        common: { ...desired.common, name }
       });
     }
     this.cache.set(id, signature);

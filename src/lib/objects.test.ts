@@ -240,6 +240,41 @@ describe('ObjectWriter', () => {
 		});
 	});
 
+	it('upgrades a name an earlier version stored in fewer languages', async () => {
+		writer.value('households.1.expenses.count', 'Number of expenses read', 'number', 'value', 3);
+		await writer.flush();
+
+		// What an older adapter left behind: the same name, but English and German only.
+		adapter.objects.get('households.1.expenses.count')!.common.name = {
+			en: 'Number of expenses read',
+			de: 'Anzahl der gelesenen Ausgaben',
+		};
+
+		const second = new ObjectWriter(adapter.asAdapter());
+		second.value('households.1.expenses.count', 'Number of expenses read', 'number', 'value', 4);
+		await second.flush();
+
+		const name = adapter.objects.get('households.1.expenses.count')?.common.name as Record<string, string>;
+		expect(Object.keys(name).length).to.be.greaterThan(2);
+		expect(name.en).to.equal('Number of expenses read');
+		expect(name.fr).to.be.a('string');
+	});
+
+	it('leaves a renamed object alone even when its name is a translation object', async () => {
+		writer.value('households.1.expenses.count', 'Number of expenses read', 'number', 'value', 3);
+		await writer.flush();
+		adapter.objects.get('households.1.expenses.count')!.common.name = { en: 'My counter', de: 'Mein Zähler' };
+
+		const second = new ObjectWriter(adapter.asAdapter());
+		second.value('households.1.expenses.count', 'Number of expenses read', 'number', 'value', 4);
+		await second.flush();
+
+		expect(adapter.objects.get('households.1.expenses.count')?.common.name).to.deep.equal({
+			en: 'My counter',
+			de: 'Mein Zähler',
+		});
+	});
+
 	it('keeps names that come from KitchenOwl out of the translation table', async () => {
 		// "Items" is a perfectly ordinary list name and also one of the adapter's
 		// own; translating it would rename the user's list to "Artikel".
