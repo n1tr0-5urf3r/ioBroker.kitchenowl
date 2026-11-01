@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "kitchenowl",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "news": {
+      "0.0.8": {
+        "en": "The name of the photo storage is brought up to date on an upgrade too. It is created outside the sweep over the synced objects, so the previous version corrected every object name except that one\nThe adapter is built with TypeScript 6. `npm run check:next` type-checks it with TypeScript 7 as well, so the move to the native compiler is a known quantity by the time the tooling around it can follow",
+        "de": "Bei einem Upgrade wird auch der Name des Fotospeichers aktualisiert. Es wurde außerhalb der synchronisierten Objekte erstellt, daher korrigierte die Vorgängerversion alle Objektnamen.\nDer Adapter basiert auf TypeScript 6. `npm run check:next` prüft es auch mit TypeScript 7, sodass der Wechsel zum nativen Compiler bekannt ist, bis die Tools folgen können",
+        "ru": "Название хранилища фотографий также обновлено при обновлении. Оно создано без проверки синхронизированных объектов, поэтому в предыдущей версии были исправлены все имена объектов, кроме одного\nАдаптер построен с использованием TypeScript 6. Тип `npm run check:next` также проверяет его с помощью TypeScript 7, поэтому переход на собственный компилятор уже известен к тому времени, когда появятся необходимые инструменты",
+        "pt": "O nome do armazenamento de fotos também é atualizado. Ele é criado fora da varredura dos objetos sincronizados, então a versão anterior corrigiu o nome de cada objeto.\nO adaptador usa o TypeScript 6. `npm run check:next` também o verifica com o TypeScript 7, então a mudança para o compilador nativo é conhecida quando as ferramentas podem ser feitas",
+        "nl": "De naam van de fotoopslag wordt bij een upgrade ook bijgewerkt. Het is gemaakt buiten het bereik van de gesynchroniseerde objecten, dus in de vorige versie werd elke objectnaam gecorrigeerd, behalve die\nDe adapter is gebouwd met TypeScript 6. `npm run check:next` typecontrole het ook met TypeScript 7, dus de overstap naar de oorspronkelijke compiler is een bekende hoeveelheid tegen de tijd dat het gereedschap dat kan volgen",
+        "fr": "Le nom du stockage de photos est également mis à jour lors d'une mise à jour. Il a été créé en dehors du balayage des objets synchronisés. La version précédente corrigeait tous les noms d'objets sauf celui-ci\nL'adaptateur est basé sur TypeScript 6. `npm run check:next` le vérifie également avec TypeScript 7. Le passage au compilateur natif est donc connu avant que l'outillage ne puisse suivre",
+        "it": "Anche il nome dell'archivio foto viene aggiornato con un upgrade. È creato al di fuori degli oggetti sincronizzati, quindi la versione precedente correggeva tutti i nomi tranne quello\nL'adattatore è basato su TypeScript 6. `npm run check:next` lo verifica anche con TypeScript 7, quindi il passaggio al compilatore nativo è noto prima che seguano gli strumenti",
+        "es": "El nombre del almacén de fotos también se actualiza en una mejora. Se crea fuera del barrido de los objetos sincronizados, por lo que la versión anterior corrigió todos los nombres de objetos excepto ese\nEl adaptador incluye TypeScript 6. `npm run check:next` también lo comprueba con TypeScript 7, por lo que el paso al compilador nativo es una cantidad conocida cuando le siguen las herramientas",
+        "pl": "Nazwa magazynu zdjęć jest również aktualizowana podczas aktualizacji. Jest tworzony poza przesunięciem zsynchronizowanych obiektów, więc poprzednia wersja poprawiła nazwę każdej obiektu z wyjątkiem tej\nAdapter jest zbudowany z TypeScript 6. Typ `npm run check:next` sprawdza go również za pomocą TypeScript 7, więc przejście do natywnego kompilatora jest znaną ilością do czasu, gdy oprzyrządowanie wokół niego może nastąpić",
+        "uk": "Назва сховища фотографій також оновлюється при оновленні. Він створюється поза зміщенням над синхронізованими об'єктами, тому попередня версія виправляла кожну назву об'єкта, крім одного\nАдаптер побудований за допомогою TypeScript 6. `npm run check:next` type перевіряє його також за допомогою TypeScript 7, тому перехід до рідного компілятора є відомою величиною до того часу, коли інструменти навколо нього можуть слідувати",
+        "zh-cn": "照片存储的名称也会在升级时更新。它是在扫描同步对象的外部创建的，因此先前的版本更正了除该对象之外的所有对象名称\n该适配器使用 TypeScript 6 构建。`npm run check: next` 也会使用 TypeScript 7 对其进行类型检查，因此当围绕它的工具出现时，向原生编译器的迁移已是已知数量"
+      },
       "0.0.7": {
         "en": "Object names written by an earlier version are brought up to date on an upgrade. Names were only ever created, never corrected, so an installation that already had the tree kept the English and German names of version 0.0.5 even after updating. A name that was edited in the admin interface or that comes from KitchenOwl is still left untouched",
         "de": "Objektnamen früherer Versionen werden bei einem Upgrade aktualisiert. Namen wurden nur erstellt, nie korrigiert. Eine Installation mit dem Baum behielt also auch nach dem Update die englischen und deutschen Namen von Version 0.0.5. Ein Name, der im Admin-Interface geändert wurde oder von KitchenOwl stammt, bleibt unberührt",
@@ -80,19 +93,6 @@
         "pl": "Naprawiono opóźnienie ponownej próby, które nie zostało anulowane po wyłączeniu adaptera\nSkompilowane dane wyjściowe są ponownie częścią repozytorium, więc instalacja z adresu URL GitHub działa\nPrzetłumaczył interfejs administratora na pozostałe języki\nPodniesiono wymagania do Node.js 22.19 i admin 7.6.20\nWydania są publikowane automatycznie z CI",
         "uk": "Виправлена затримка повторної спроби, яка не була скасована при вимкненні адаптера\nСкомпільований вихід знову є частиною сховища, тому установка з URL-адреси GitHub працює\nПереклав інтерфейс адміністратора на інші мови\nПідняли вимоги до Node.js 22.19 та адміністратора 7.6.20\nРелізи публікуються автоматично з CI",
         "zh-cn": "修复了适配器关闭时未取消的重试延迟问题\n编译后的输出又是存储库的一部分，因此可以从 GitHub URL 进行安装\n已将管理界面翻译成其余语言\n将要求提高到 Node.js 22.19 和管理员 7.6.20\n版本从 CI 自动发布"
-      },
-      "0.0.1": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
       }
     },
     "titleLang": {
