@@ -34,6 +34,26 @@ jobs:
           type-checking: true
           lint: true
 
+  # Type-checks against the native TypeScript 7 compiler, which the adapter
+  # cannot be built with yet: typescript-eslint refuses to load against it and
+  # ts-node cannot drive it, because 7.0 ships no compiler API. Nothing depends
+  # on this job and it is allowed to fail, so it reports whether the sources are
+  # ready for the move without standing in the way of a merge.
+  typescript-next:
+    if: contains(github.event.head_commit.message, '[skip ci]') == false
+
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check:next
+
   # Runs adapter tests on all supported node versions and OSes
   adapter-tests:
     needs: [check-and-lint]

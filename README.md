@@ -239,6 +239,7 @@ sendTo('kitchenowl.0', 'refresh', {}, result => log(JSON.stringify(result)));
 ### **WORK IN PROGRESS**
 
 - (n1tr0-5urf3r) The name of the photo storage is brought up to date on an upgrade too. It is created outside the sweep over the synced objects, so the previous version corrected every object name except that one
+- (n1tr0-5urf3r) The adapter is built with TypeScript 6. `npm run check:next` type-checks it with TypeScript 7 as well, so the move to the native compiler is a known quantity by the time the tooling around it can follow
 
 ### 0.0.7 (2026-10-18)
 

@@ -20,6 +20,13 @@ updates:
       - dependency-name: "@types/node"
         update-types:
           - version-update:semver-major
+      # TypeScript 7 is the native port and ships no compiler API, so
+      # typescript-eslint refuses to load against it and ts-node cannot drive
+      # it. Both are expected to follow once 7.1 brings the new API back, which
+      # has no date yet, so the major is bumped by hand rather than monthly.
+      - dependency-name: "typescript"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: "/"

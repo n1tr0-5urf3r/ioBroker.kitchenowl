@@ -19,6 +19,10 @@
 
 		"noEmitOnError": true,
 		"outDir": "./build/",
+
+		// TypeScript 6 no longer guesses this: without it the compiler stops with
+		// TS5011 as soon as the files it is handed all sit under src/lib.
+		"rootDir": ".",
 		"removeComments": false,
 
 		// This is necessary for the automatic typing of the adapter config
